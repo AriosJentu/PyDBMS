@@ -3,8 +3,12 @@ import warnings
 import shutil
 import zipfile
 import json
+import table
 
-class PDBFileClass:
+class _PDBFileClass:
+
+	#Meta file name
+	meta = "meta.json"
 
 	def __init__(self, filename):
 	
@@ -26,9 +30,12 @@ class PDBFileClass:
 		self.__file = zipfile.ZipFile(filename, "r")
 		self.__file.extractall(cur_dir)
 
+		self.__dbname = file_name
 		self.__filename = file_name+file_format
 		self.__current_dir = cur_dir
+
 		self.__filelist = set()
+		self.__metainfo = self.get_meta_info()
 
 		#Push all files inside array
 		for i in self.__file.filelist:
@@ -82,6 +89,17 @@ class PDBFileClass:
 			return None
 
 		self.__filelist.add(filename) 			#Save file in set
+
+	def _open_file(self, filename, mode="r"):
+
+		realfilename = self.__current_dir+filename
+		
+		#Trying to open file from this archieve
+		try:
+			return open(realfilename, mode)
+
+		except:
+			warnings.warn("File doesn't exist. Can't open.")
 
 
 	def _create_directory(self, dirname):
@@ -157,51 +175,104 @@ class PDBFileClass:
 	def get_file_list(self):
 		return self.__filelist
 
+	def get_current_directory(self):
+		return self.__current_dir
 
-class DataBase:
 
-	@staticmethod
-	def create(filename):
-		#Creating database
+	def get_meta_info(self):
+		
+		#Check archive for is it a database (has it meta file)
+		if not os.path.isfile(self.__current_dir+_PDBFileClass.meta):
+			raise Exception("This archive is not database")
 
-		#Checking - is file exists:
-		if os.path.isfile(filename):
-			warnings.warn("File exist. Rewriting.")
+		#Read meta and return dict with fields "name" and "tables"
+		#with open(self.__current_dir+_PDBFileClass.meta) as dbmeta:
+		with self._open_file(_PDBFileClass.meta) as metafile:
 
-		#Getting file name and format:
-		file_name = filename[:filename.find(".")]
-		file_format = filename[filename.find("."):]
+			self.__metainfo = json.load(metafile)
+			return self.__metainfo
 
-		cur_dir = ".__"+file_name+"__/"		#Current directory
-		os.mkdir(cur_dir)					#Making base directory
 
-		#Meta file creation
-		with open(cur_dir+"meta.json", "w") as meta:
+	def _update_meta_info(self, diction={}):
+
+		#Meta file of db must contain only 2 meta informations: name and tables 
+		#Check for name in database
+		if "name" not in diction.keys():
+			name = self.__dbname
+		else:
+			name = diction["name"]
+
+		#Check for tables in database
+		if "tables" not in diction.keys() or type(diction["tables"]) != type([]):
+			tables = []
+		else:
+			tables = diction["tables"]
+
+		#Update meta info
+		self.__metainfo = {"name": name, "tables": tables}
+
+		#Update file
+		with self._open_file(_PDBFileClass.meta, "w") as metafile:
 
 			#Save meta info
+			json.dump(self.__metainfo, metafile)
+
+
+	def is_table_exist(self, name):
+
+		#Get list of tables
+		tables = self.get_meta_info()["tables"]
+
+		#Flag for existance
+		flag = True
+
+		#If name not in meta file tables info
+		if name not in tables:
+			flag = False
+
+		#----------------------------------------
+		#-- TODO: Check directory existance -----
+		#-------- Check in directory meta file --
+		#----------------------------------------
+
+		return flag
+
+
+	def create_table(self, name, fields=[]):
+
+		#Check table for existance
+		if self.is_table_exist(name):
+			warnings.warn("Table already exists.")
+			return None
+
+		#Update meta information of database
+		metainfo = self.get_meta_info()
+		metainfo["tables"].append(name)
+		self._update_meta_info(metainfo)
+
+		#Creating directory for database and it's meta
+		self._create_directory(name)
+		self._create_file(name+"/"+_PDBFileClass.meta)
+
+		#Save information of table to it's meta file
+		with self._open_file(name+"/"+_PDBFileClass.meta, "w") as tabmeta:
+			
 			json.dump({
-				"name": filename,		#Database name
-				"tables": []			#List of tables in DB
-			}, meta)					#To meta file\
+				"name": name,			#Name of table
+				"fields": fields		#Table fields
+			}, tabmeta)					#To meta file
 
 
-		#Saving zip file:
-		with zipfile.ZipFile(filename, "w") as database:
-			database.write(cur_dir+"meta.json", "meta.json")
+		return table._PDBTable(self, name)
 
-		shutil.rmtree(cur_dir, ignore_errors=True)	#Removing current directory
-		return PDBFileClass(filename) 				#Returning file class
 
-	@staticmethod
-	def open(filename):
-		#Opening database
+	def get_table(self, name):
+		
+		#Check table for existance
+		if not self.is_table_exist(name):
+			warnings.warn("Table isn't exists.")
+			return None
 
-		#Checking - is file exists:
-		if not os.path.isfile(filename):
-
-			#If not exist - create
-			warnings.warn("File doesn't exist. Creating.")
-			return DataBase.create(filename)
-
-		return PDBFileClass(filename)		#Returning file class
+		#If table exists, returns table object
+		return table._PDBTable(self, name)
 
