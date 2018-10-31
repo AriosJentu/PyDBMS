@@ -70,13 +70,35 @@ class Parser:
 				"name": ""
 			},
 		}
-		#-----------------------------
-		#-- TODO: show create table --
-		#-----------------------------
+
+		
+		langCommands = ["show"]
+		langWords = ["table"]
+		bracketOn = False
+
+		word = ZeroOrMore(Word(alphas).ignore(",").ignore('"').ignore("'"))
+
+
+		request = word 
+
+		parseRequest = {}
+
+		list_ = request.parseString(sqlstring)
+		for i in range(len(list_)):
+			if(list_[i] in langCommands):
+
+				command = list_[i]
+
+				#print(command)
+
+			if( ( not(list_[i] in langWords) and not(list_[i] in langCommands) ) ):
+				expName = list_[i]
+				if expName != " ":
+					result["show"]["name"] = expName
 
 		return result
 
-Parser.create_basic("create table 'KEKOS' ('id', 'name', \"HUI\")")
-Parser.show_create_basic("show create table 'KEKOS'")
+print(Parser.create_basic("create table 'KEKOS' ('id', 'name', \"HUI\")"))
+print(Parser.show_create_basic("show create table 'KEKOS'"))
 
 
