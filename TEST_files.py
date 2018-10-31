@@ -1,4 +1,4 @@
-from connecter import DataBase 					#Import DataBase
+from connector import DataBase 					#Import DataBase
 
 DataBase()										#Nothing happens
 
