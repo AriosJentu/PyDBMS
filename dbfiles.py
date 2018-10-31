@@ -3,12 +3,10 @@ import warnings
 import shutil
 import zipfile
 import json
-import table
+import tables
+import consts
 
 class _PDBFileClass:
-
-	#Meta file name
-	meta = "meta.json"
 
 	def __init__(self, filename):
 	
@@ -36,6 +34,8 @@ class _PDBFileClass:
 
 		self.__filelist = set()
 		self.__metainfo = self.get_meta_info()
+
+		#Meta file name
 
 		#Push all files inside array
 		for i in self.__file.filelist:
@@ -182,12 +182,11 @@ class _PDBFileClass:
 	def get_meta_info(self):
 		
 		#Check archive for is it a database (has it meta file)
-		if not os.path.isfile(self.__current_dir+_PDBFileClass.meta):
+		if not os.path.isfile(self.__current_dir+consts.meta):
 			raise Exception("This archive is not database")
 
 		#Read meta and return dict with fields "name" and "tables"
-		#with open(self.__current_dir+_PDBFileClass.meta) as dbmeta:
-		with self._open_file(_PDBFileClass.meta) as metafile:
+		with self._open_file(consts.meta) as metafile:
 
 			self.__metainfo = json.load(metafile)
 			return self.__metainfo
@@ -212,7 +211,7 @@ class _PDBFileClass:
 		self.__metainfo = {"name": name, "tables": tables}
 
 		#Update file
-		with self._open_file(_PDBFileClass.meta, "w") as metafile:
+		with self._open_file(consts.meta, "w") as metafile:
 
 			#Save meta info
 			json.dump(self.__metainfo, metafile)
@@ -252,18 +251,17 @@ class _PDBFileClass:
 
 		#Creating directory for database and it's meta
 		self._create_directory(name)
-		self._create_file(name+"/"+_PDBFileClass.meta)
+		self._create_file(name+"/"+consts.meta)
 
 		#Save information of table to it's meta file
-		with self._open_file(name+"/"+_PDBFileClass.meta, "w") as tabmeta:
+		with self._open_file(name+"/"+consts.meta, "w") as tabmeta:
 			
 			json.dump({
 				"name": name,			#Name of table
 				"fields": fields		#Table fields
 			}, tabmeta)					#To meta file
 
-
-		return table._PDBTable(self, name)
+		return tables._PDBTable(self, name)
 
 
 	def get_table(self, name):
@@ -274,5 +272,22 @@ class _PDBFileClass:
 			return None
 
 		#If table exists, returns table object
-		return table._PDBTable(self, name)
+		return tables._PDBTable(self, name)
+
+
+	def drop_table(self, name):
+
+		#Check table for existance
+		if not self.is_table_exist(name):
+			warnings.warn("Table isn't exists.")
+			return None
+
+		#Update meta information of database
+		metainfo = self.get_meta_info()
+		metainfo["tables"].remove(name)
+		self._update_meta_info(metainfo)
+
+		#Removing directory
+		self._remove_directory(name)
+
 

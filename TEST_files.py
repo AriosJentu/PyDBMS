@@ -1,4 +1,4 @@
-from database import DataBase 					#Import DataBase
+from connecter import DataBase 					#Import DataBase
 
 DataBase()										#Nothing happens
 
@@ -25,15 +25,24 @@ db._remove_directory("helloworld/test")				#Directory removed
 print(db._is_directory_exist("helloworld/test"))	#False
 print(db._is_file_exist("helloworld/test/f.txt"))	#False
 
-db.create_table("default", ["tst", "field2"])	#Database's Table created
-db.create_table("default", ["tst", "field2"])	#Database's Table exists
-db.create_table("default2", ["tst", "field2"])	#Database's Table created
+db.create_table("default", ["tst", "field2"])		#Database's Table created
+db.create_table("default", ["tst", "field2"])		#Database's Table exists
+db.create_table("default2", ["tst", "field2"])		#Database's Table created
+db.create_table("default3", ["tst", "field2"])		#Database's Table created
+s = db.create_table("default4", ["tst", "field2"])	#Database's Table created
+db.drop_table("default3")							#Database's Table dropped
+db.drop_table("default3")							#Database's Table isn't exist
+s.drop_table()										#Database's Table dropped
 
-print(db.get_file_list())						#Print list of files to commit
-db.commit()										#Commit database to file
-db._create_file("create_before_close.txt")		#File created
+table = db.get_table("default2")			#Database's Table created
 
-print(db.get_meta_info())						#Print DataBase meta info
-db.create_table("default3", ["tst", "field2"])	#Database's Table created
+print(db.get_file_list())					#Print list of files to commit
+db.commit()									#Commit database to file
+db._create_file("create_before_close.txt")	#File created
 
-db.close(False)										#Close database
+print(db.get_meta_info())					#Print DataBase meta info
+
+print("\n\n")								#Print separators
+print(table.show_create())					#Print table creation
+
+db.close()									#Close database
