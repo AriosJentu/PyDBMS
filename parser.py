@@ -70,13 +70,10 @@ class Parser:
 				"name": ""
 			},
 		}
-		#-----------------------------
-		#-- TODO: show create table --
-		#-----------------------------
 
 		return result
 
-Parser.create_basic("create table 'KEKOS' ('id', 'name', \"HUI\")")
-Parser.show_create_basic("show create table 'KEKOS'")
+#Parser.create_basic("create table 'KEKOS' ('id', 'name', \"HUI\")")
+#Parser.show_create_basic("show create table 'KEKOS'")
 
 
