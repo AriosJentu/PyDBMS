@@ -34,6 +34,10 @@ db.drop_table("default3")							#Database's Table dropped
 db.drop_table("default3")							#Database's Table isn't exist
 s.drop_table()										#Database's Table dropped
 
+db.execute("create table 'testing' ('id', 'name')")	#Database's Table created
+show = db.execute("show create table 'testing'")	#Return table
+print(show)											#Printing
+
 table = db.get_table("default2")			#Database's Table created
 
 print(db.get_file_list())					#Print list of files to commit
@@ -42,7 +46,8 @@ db._create_file("create_before_close.txt")	#File created
 
 print(db.get_meta_info())					#Print DataBase meta info
 
-print("\n\n")								#Print separators
-print(table.show_create())					#Print table creation
+#print("\n\n")								#Print separators
+#print(table.show_create())					#Print table creation
 
-db.close()									#Close database
+
+db.close(False)									#Close database

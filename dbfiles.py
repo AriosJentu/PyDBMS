@@ -5,6 +5,7 @@ import zipfile
 import json
 import tables
 import consts
+import parser
 
 class _PDBFileClass:
 
@@ -288,6 +289,30 @@ class _PDBFileClass:
 		self._update_meta_info(metainfo)
 
 		#Removing directory
+
 		self._remove_directory(name)
+
+
+	#VERY ISHT CODE
+	def execute(self, sqlquery):
+
+		if sqlquery.find("create") >= 0:
+
+			#CHECK FOR BULLISHT QUERY SHOW CREATE TABLE
+			if sqlquery.find("show") >= 0:
+
+				query = parser.Parser.show_create_basic(sqlquery)
+				return self.get_table(query["show"]["name"]).show_create()
+
+			#CHECK FOR BULLISHT QUERY CREATE TABLE
+			else:
+							
+				query = parser.Parser.create_basic(sqlquery)
+
+				return self.create_table(
+					query["table"]["name"],
+					query["table"]["fields"]
+				)
+
 
 
