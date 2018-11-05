@@ -13,8 +13,25 @@ def get_type_size(types):
 #Exception class
 class DataBaseException(Exception):
 
-	def __init__(self, message):
-		super().__init__(message)
+	Exist = "{} '{}' already exist."
+	DoesntExist = "{} '{}' doesn't exist."
+
+	Exceptions = {
+		0:	"Data Base Error",
+		1:	Exist.format("File", "{}"),
+		2:	DoesntExist.format("File", "{}"),
+		3:	Exist.format("Table", "{}"),
+		4:	DoesntExist.format("Table", "{}"),
+		5:	"Wrong Data Base Signature.",
+	}
+	
+	def __init__(self, message, *args):
+		
+		ex = DataBaseException.Exceptions
+		if type(message) == int and 0 <= message < len(ex):
+			super().__init__(ex[message].format(*args))
+		else:
+			super().__init__(message)
 
 #Class to work with binary file like as default file 
 class BinaryFile:
@@ -126,7 +143,7 @@ class BinaryDataBase:
 	def create(self):
 
 		#if os.path.isfile(self.__name):
-		#	raise DataBaseException("File already exists.")
+		#	raise DataBaseException(1, self.__name)	#File Exist
 
 		name = self.__name
 		
@@ -141,15 +158,15 @@ class BinaryDataBase:
 			file.writestr(fname, cbytes=31)		#Write 31 bytes for filename
 
 			#Write tables count (48th byte) [MAX Count of tables = 32 (255 max int in 1 byte)]
-			file.writeint(2, starts=47, cbytes=1)	#1 is tables count (now it's just test table)
+			file.writeint(1, starts=47, cbytes=1)	#1 is tables count (now it's just test table)
 
 			#Write meta info for 32 tables
 			for i in range(consts.tablecount):
 
-				if i <= 1:
+				if i == 0:
 
 					table = {
-						"name": "__test"+str(i)+"__",
+						"name": "__test__",
 						"fields": ["test1", "test2"],
 						"types": ["int", "str"]
 					}
@@ -167,9 +184,9 @@ class BinaryDataBase:
 				index = 48 + 512*i
 				#Write table name and count of fields
 				file.writestr(table["name"], starts=index, cbytes=31)	#Requred TableName size is 31 (from 48th byte)
-				file.writeint(len(table["fields"]), starts=index+31)			#Write 1 byte to count of fields
+				file.writeint(len(table["fields"]), starts=index+31)	#Write 1 byte to count of fields
 				
-				#Write fields, max count of fields is 15
+				#Write fields, max count of fields is 14
 				index += 32
 				for j in range(14):
 					
@@ -186,12 +203,16 @@ class BinaryDataBase:
 
 				#Write information about positions
 				index = index_pos+32 #Add last line
-				file.writeint(0, starts=index, cbytes=30) 	#Index size - 3 bytes, can be 10 indexes,it means 5 pages, last 2 bytes are size of row
+				file.writeint(0, starts=index, cbytes=30) 	#Index size - 3 bytes, can be 10 indexes, last 2 bytes are size of row
 				file.writeint(rowlength, starts=index+30, cbytes=2)	#Row size
 
 			rowlength = 1 + 3 + consts.intsize + consts.strsize #Recalculate
-			index += 32		#Skip last line (because it's busy)
+			findex = 48 + 15*32		#Calculate line with tables indexes
+			index += 32				#Skip last line (because it's busy)
 
+			#Write index of start
+			file.writeint(index, starts=findex, cbytes=3)
+			
 			#Write it's table 
 			for i in range(consts.pagesize):
 				rowindex = index + i*rowlength
@@ -205,8 +226,8 @@ class BinaryDataBase:
 
 	def open(self):
 
-		#if not os.path.isfile(self.__name):
-		#	raise DataBaseException("File doesn't exists.")
+		if not os.path.isfile(self.__name):
+			raise DataBaseException(2, self.__name)		#File doesn't exist
 		
 		name = self.__name
 		
@@ -218,17 +239,12 @@ class BinaryDataBase:
 			
 			#Checking for binary signature
 			if sign != consts.signature:
-				raise DataBaseException("Wrong Signature")
+				raise DataBaseException(5)				#Wrong signature
 
 			dbname = file.readstr(starts=16, cbytes=31)	#Read 31 bytes of name starts after signature (16th byte)
 
 			#Getting tables count
 			self.__tables_count = file.readint(starts=47)
-
-
-	#Getting tables count
-	def get_tables_count(self):
-		return self.__tables_count
 
 
 	def _get_table_meta(self, tablename):
@@ -241,13 +257,13 @@ class BinaryDataBase:
 				#Get table name from index
 				tabindex = 48 + 512*i
 				name = file.readstr(starts=tabindex, cbytes=31)
-				print(name)
 				
 				#Check tablename for correctness				
 				if name == tablename:
 
 					tabindex += 32	#Skip name
 					
+					#Returnable meta information
 					meta = {
 						"name": name,
 						"fields": [],
@@ -267,15 +283,32 @@ class BinaryDataBase:
 						meta["fields"].append(field)
 						meta["types"].append(stype)
 
-					#Calculate row length
-					rowlength = 1 + 3 + sum(get_type_size(i) for i in meta["types"])
+
+					index_pos = tabindex + 14*32
+					for i in range(10):
+						
+						indx = index_pos + i*3								#Calculate index
+						pageindx = file.readint(starts=indx, cbytes=3)		#Read position of start page number 'i'
+						
+						#Check for existing page index
+						if pageindx == 0:
+							break
+
+						#Save start position to page's positions array
+						meta["pagespos"].append(pageindx)
+
+					rowlength = file.readint(starts=index_pos+30, cbytes=2)	#Read rowlength from meta
 					meta["rowlength"] = rowlength
 
 					return meta
+
+			else:
+
+				raise DataBaseException(4, tablename)	#Table doesn't exist
 
 
 
 
 database = BinaryDataBase("testdb.jpdb")
 database.create()
-print(database._get_table_meta("__test1__"))
+print(database._get_table_meta("__test__"))
