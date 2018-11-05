@@ -28,8 +28,9 @@ class DataBaseException(Exception):
 		5:	"Wrong Data Base Signature.",
 		6:	"Data Base isn't connected.",
 		7:	"Already too much tables inside.",
-		8:	"Count of fields and count of types are different",
-		9:	"Too much Table's Fields",
+		8:	"Count of fields and count of types are different.",
+		9:	"Too much Table's Fields.",
+		10:	"Table with name '{}' already exists.",
 
 	}
 	
@@ -142,13 +143,6 @@ class BinaryDataBase:
 		self.__tables_count = 1
 		self.__opened = False
 
-	def connect(self):
-		
-		if os.path.isfile(self.__name):
-			return self.open()
-		else:
-			return self.create()
-
 	def create(self):
 
 		#if os.path.isfile(self.__name):
@@ -236,9 +230,9 @@ class BinaryDataBase:
 			#Get end of page
 			rowindex += rowlength
 
-		return self.open()
+		return self.connect()
 
-	def open(self):
+	def connect(self):
 
 		#Check for existance
 		if not os.path.isfile(self.__name):
@@ -270,6 +264,10 @@ class BinaryDataBase:
 		#Check for max tables:
 		if self.__tables_count >= consts.tablecount:
 			raise DataBaseException(7)	#Maximal tables in Database
+
+		#Check for existing name
+		if tablename in self.get_list_of_tablenames():
+			raise DataBaseException(10, tablename)	#Name already exist
 
 		#Generate correct types
 		types = [i for i in types if i.lower() in available_types]
@@ -421,6 +419,7 @@ class BinaryDataBase:
 database = BinaryDataBase("testdb.jpdb")
 database.create()
 database.create_table("keks", ["Integer"], ["int"])
+database.create_table("keks", ["Lalka"], ["int"])
 print(database.get_list_of_tablenames())
 for i in database.get_list_of_tablenames():
 	print(database._get_table_meta(i))
