@@ -31,6 +31,7 @@ class DataBaseException(Exception):
 		8:	"Count of fields and count of types are different.",
 		9:	"Too much Table's Fields.",
 		10:	"Table with name '{}' already exists.",
+		11:	"Count of pages for table '{}' too much.",
 
 	}
 	
@@ -218,13 +219,11 @@ class BinaryDataBase:
 			file.writeint(index, starts=findex, cbytes=3)
 			
 			#Write it's table 
-
-			#file.writeint(253, starts=index, cbytes=1)					####TESTING
-
 			for i in range(consts.pagesize):
 				rowindex = index + i*rowlength
 				file.writeint(0, starts=rowindex, cbytes=rowlength)
 			
+			#file.writeint(253, starts=index, cbytes=1)					####TESTING
 			#file.writeint(253, starts=rowindex+rowlength-1, cbytes=1)	####TESTING
 
 			#Get end of page
@@ -322,10 +321,74 @@ class BinaryDataBase:
 				rowindex = findex + i*rowlength
 				file.writeint(0, starts=rowindex, cbytes=rowlength)
 
-			#file.writeint(254, starts=findex, cbytes=1)				###TESTING
-			#file.writeint(254, starts=rowindex+rowlength-1, cbytes=1)	###TESTING
+			#file.writeint(90, starts=findex, cbytes=1)					###TESTING
+			#file.writeint(90, starts=rowindex+rowlength-1, cbytes=1)	###TESTING
 
 		self.__tables_count += 1	#Append one table to tables count
+
+
+	def _create_page_from_table_index(self, tabindex):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise DataBaseException(6)	#Database isn't connected
+
+
+		#Open file
+		with self.__file.open("r+") as file:
+
+			#Get table name from index
+			name = file.readstr(starts=tabindex, cbytes=31)
+
+			#Index of array of positions
+			index_pos = tabindex + (consts.fieldscount+1)*32
+
+			#Cycle for all indexes of pages
+			for i in range(10):
+
+				#Check for zero
+				if file.readint(starts=index_pos+3*i, cbytes=3) == 0:
+
+					#Save index
+					pos = index_pos+3*i
+					break
+
+			#If cycle is not broken
+			else:
+				raise DataBaseException(11, name)	#Count of page too much
+
+			#Read length of row
+			rowlength = file.readint(starts=index_pos+30, cbytes=2)
+
+			#Calculate file positions
+			file.seek(0, 2)	#Get to the end of file
+			last_index = file.tell()
+
+			#Write page index to table meta info
+			file.writeint(last_index, starts=pos, cbytes=3)
+
+			#Write page to the end of file
+			for i in range(consts.pagesize):
+				rowindex = last_index + i*rowlength
+				file.writeint(0, starts=rowindex, cbytes=rowlength)
+
+			#file.writeint(75, starts=last_index, cbytes=1)				###TESTING
+			#file.writeint(75, starts=rowindex+rowlength-1, cbytes=1)	###TESTING
+
+
+	def create_page(self, tablename):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise DataBaseException(6)	#Database isn't connected
+		
+		tabs = self.get_list_of_tablenames()
+		if tablename in tabs.keys():
+			return self._create_page_from_table_index(tabs[tablename])
+
+		else:
+			raise DataBaseException(4, tablename)	#Table doesn't exist
+
 
 
 	def _get_meta_from_index(self, tabindex):
@@ -407,7 +470,7 @@ class BinaryDataBase:
 			for i in range(self.__tables_count):
 
 				#Get table name from index
-				tabindex = 48 + 512*i
+				tabindex = 48 + metasize*i
 				name = file.readstr(starts=tabindex, cbytes=31)
 				names[name] = tabindex
 
@@ -415,11 +478,14 @@ class BinaryDataBase:
 
 
 
-
 database = BinaryDataBase("testdb.jpdb")
 database.create()
 database.create_table("keks", ["Integer"], ["int"])
-database.create_table("keks", ["Lalka"], ["int"])
+database.create_table("kekos", ["Lalka"], ["int"])
+database.create_page("keks")
+database.create_page("kekos")
+database.create_page("keks")
+
 print(database.get_list_of_tablenames())
 for i in database.get_list_of_tablenames():
 	print(database._get_table_meta(i))
