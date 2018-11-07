@@ -2,14 +2,31 @@ import os
 import consts
 
 #Default switch function to types for getting type bytesize
-available_types = ["int", "str"] #Available types
+available_types = ["int", "str", "bol"] 	#Available types
 metasize = (consts.fieldscount+2)*32
 
 def get_type_size(types):
 	return {
 		True: consts.maxsize,
+		(types == "bol"): consts.boolsize,
 		(types == "int"): consts.intsize,
-		(types == "str"): consts.strsize
+		(types == "str"): consts.strsize,
+	}[True]
+
+def get_type_from_str(types):
+	return {
+		True: None,
+		(types == "bol"): bool,
+		(types == "int"): int,
+		(types == "str"): str,
+	}[True]
+
+def get_default_value(types):
+	return {
+		True: None,
+		(types == "bol"): False,
+		(types == "int"): 0,
+		(types == "str"): "",
 	}[True]
 
 #Exception class
@@ -20,7 +37,7 @@ class DataBaseException(Exception):
 
 	Exceptions = {
 
-		0:	"Data Base Error",
+		0:	"Data Base Error!",
 		1:	Exist.format("File", "{}"),
 		2:	DoesntExist.format("File", "{}"),
 		3:	Exist.format("Table", "{}"),
@@ -32,6 +49,9 @@ class DataBaseException(Exception):
 		9:	"Too much Table's Fields.",
 		10:	"Table with name '{}' already exists.",
 		11:	"Count of pages for table '{}' too much.",
+		12:	DoesntExist.format("Field Type", "{}"),
+		13:	"Incorrect values count for INSERT: Need '{}', Got: '{}'.",
+		14:	"Value with index '{}' need to be '{}', but got '{}'.",
 
 	}
 	
@@ -106,6 +126,10 @@ class BinaryFile:
 		#Write info to file
 		return self.__file.write(number)
 
+	def writebool(self, boolval, starts=-1, cbytes=1):
+		#Inserting boolean value converted to integer
+		return self.writeint(int(boolval), starts, cbytes)
+
 	def readstr(self, starts=-1, cbytes=1):
 		#Getting bytes from file, converted to string with fixed bytes count
 
@@ -132,6 +156,30 @@ class BinaryFile:
 
 		#Return string
 		return ints
+
+	def readbool(self, starts=-1, cbytes=1):
+		#Read boolean value as integer
+		return bool(self.readint(starts, cbytes)) 
+
+	def writetype(self, otype, *args, **kwargs):
+		#Write to file from type of object
+
+		if otype == "int":
+			self.writeint(*args, **kwargs)
+		elif otype == "str":
+			self.writestr(*args, **kwargs)
+		elif otype == "bol":
+			self.writebool(*args, **kwargs)
+
+	def readtype(self, otype, *args, **kwargs):
+		#Read from file as type of object
+
+		if otype == "int":
+			return self.readint(*args, **kwargs)
+		elif otype == "str":
+			return self.readstr(*args, **kwargs)
+		elif otype == "bol":
+			return self.readbool(*args, **kwargs)
 
 
 #Class for binary database
@@ -188,9 +236,10 @@ class BinaryDataBase:
 				#Calculate index of current table in file
 				index = 48 + metasize*i
 				#Write table name and count of fields
-				file.writestr(table["name"], starts=index, cbytes=31)	#Requred TableName size is 31 (from 48th byte)
+				file.writestr(table["name"], starts=index, cbytes=28)	#Requred TableName size is 28 (from 48th byte)
+				file.writeint(0, starts=index+28, cbytes=3)				#Write count of items in db
 				file.writeint(len(table["fields"]), starts=index+31)	#Write 1 byte to count of fields
-				
+
 				#Write fields, max count of fields is consts.fieldscount
 				index += 32
 				for j in range(consts.fieldscount):
@@ -282,7 +331,7 @@ class BinaryDataBase:
 		table = {
 			"name": tablename,
 			"fields": fields,
-			"types": types
+			"types": types,
 		}
 
 		#Calculate new table meta info position
@@ -291,7 +340,8 @@ class BinaryDataBase:
 		#Open file
 		with self.__file.open("r+") as file:
 
-			file.writestr(table["name"], starts=tabindex, cbytes=31)	#Requred TableName size is 31 (from 48th byte)
+			file.writestr(table["name"], starts=tabindex, cbytes=28)	#Requred TableName size is 28
+			file.writeint(0, starts=tabindex+28, cbytes=3)				#Write count of items in table
 			file.writeint(len(table["fields"]), starts=tabindex+31)		#Write 1 byte to count of fields
 			
 			tabindex += 32	#Append line to tab index
@@ -299,6 +349,10 @@ class BinaryDataBase:
 			#Write fields
 			for j, v in enumerate(fields):
 				
+				#Check type for availablety
+				if not get_type_from_str(types[j]):
+					raise DataBaseException(12, types[j])		#Field type doesn't exist
+
 				#Join field name and it's type to one string (last 3 bytes is type)
 				text = v[:29] + types[j]
 
@@ -375,6 +429,8 @@ class BinaryDataBase:
 			#file.writeint(75, starts=last_index, cbytes=1)				###TESTING
 			#file.writeint(75, starts=rowindex+rowlength-1, cbytes=1)	###TESTING
 
+			return last_index	#return byteindex of page in file
+
 
 	def create_page(self, tablename):
 
@@ -390,7 +446,6 @@ class BinaryDataBase:
 			raise DataBaseException(4, tablename)	#Table doesn't exist
 
 
-
 	def _get_meta_from_index(self, tabindex):
 			
 		with self.__file.open("r") as file:
@@ -400,18 +455,22 @@ class BinaryDataBase:
 				raise DataBaseException(6)	#Database isn't connected
 
 			#Get table name from index
-			name = file.readstr(starts=tabindex, cbytes=31)
-
-			tabindex += 32	#Skip name
+			name = file.readstr(starts=tabindex, cbytes=28)
+			itemscnt = file.readint(starts=tabindex+28, cbytes=3)
 			
 			#Returnable meta information
 			meta = {
+				"index": tabindex,
 				"name": name,
+				"count": itemscnt,
 				"fields": [],
 				"types": [],
 				"pagespos": [], 	#Only start positions
-				"rowlength": 0
+				"rowlength": 0,
 			}
+
+			tabindex += 32	#Skip name
+			
 
 			fieldscnt = file.readint(starts=tabindex-1)	#Read count of fieldscnt
 			
@@ -455,7 +514,82 @@ class BinaryDataBase:
 			return self._get_meta_from_index(tabs[tablename])
 
 		else:
+			print(tabs)
 			raise DataBaseException(4, tablename)	#Table doesn't exist
+
+
+	def insert_item(self, tablename, values=[]):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise DataBaseException(6)	#Database isn't connected
+		
+		#Get table meta information
+		meta = self._get_table_meta(tablename)
+
+		#Check for size of values equal to size of fields
+		if len(values) != len(meta["fields"]):
+			raise DataBaseException(13, len(meta["fields"]), len(values))	#Incorrect values count
+
+		#Check for types
+		for i, v in enumerate(values):
+
+			#If it isn't none and types are not equal
+			if type(v) != get_type_from_str(meta["types"][i]) and v != None:
+			
+				#Send exception
+				raise DataBaseException(14, 
+					i,
+					str(get_type_from_str(meta["types"][i])),
+					str(type(v)), 
+				)
+
+			#If value is None
+			elif v == None:
+				#Write default value
+				values[i] = get_default_value(meta["types"][i])
+
+		#Calculate index
+		pagenumber = meta["count"]//consts.pagesize	#Calculate page, where to insert
+		onpageindex = meta["count"]%consts.pagesize	#Calculate index on page
+
+		#If page number is equal to count of pages - create new page (cuz index doesn't exists)
+		if pagenumber == len(meta["pagespos"]):
+			index = self._create_page_from_table_index(meta["index"])
+			meta["pagespos"].append(index)
+
+		with self.__file.open("r+") as file:
+
+			#Calculate positions
+			pagepos = meta["pagespos"][pagenumber]					#Get last page position
+			value_pos = pagepos + onpageindex*meta["rowlength"]		#Calculate index on page
+
+
+			#Append count of elements
+			file.writeint(meta["count"]+1, starts=meta["index"]+28, cbytes=3)
+
+			#Write existance and identifier
+			file.writeint(1, starts=value_pos)							#1 means existance
+			file.writeint(meta["count"], starts=value_pos+1, cbytes=3)	#Count is index
+			
+
+			value_pos += 4
+			#Write values	
+			for i, v in enumerate(values):
+
+				#Type of value
+				otype = meta["types"][i]
+
+				#Calculate current bytes count
+				bytescnt = get_type_size(otype)
+
+				#Write info to file
+				file.writetype(otype, v, starts=value_pos, cbytes=bytescnt)
+
+				#Append position
+				value_pos += bytescnt
+
+
 
 	def get_list_of_tablenames(self):
 
@@ -471,7 +605,7 @@ class BinaryDataBase:
 
 				#Get table name from index
 				tabindex = 48 + metasize*i
-				name = file.readstr(starts=tabindex, cbytes=31)
+				name = file.readstr(starts=tabindex, cbytes=28)
 				names[name] = tabindex
 
 		return names
@@ -481,10 +615,14 @@ class BinaryDataBase:
 database = BinaryDataBase("testdb.jpdb")
 database.create()
 database.create_table("keks", ["Integer"], ["int"])
-database.create_table("kekos", ["Lalka"], ["int"])
+database.create_table("kekos", ["Lalka", "Palka"], ["int", "bol"])
 database.create_page("keks")
 database.create_page("kekos")
 database.create_page("keks")
+
+database.insert_item("keks", [12342])
+database.insert_item("keks", [4343])
+database.insert_item("keks", [2435478])
 
 print(database.get_list_of_tablenames())
 for i in database.get_list_of_tablenames():
