@@ -41,18 +41,14 @@ def test_insert_nothing_error():
 database = bindb.BinaryDataBase("testdb.jpdb")
 database.create()
 database.create_table("keks", ["Integer"], ["int"])
-database.create_table("kekos", ["Lalka", "Palka", "Talka"], ["int", "bol", "str"])
+database.create_table("kekos", ["Lalka", "Palka", "Talka"], ["str", "int", "bol"])
 database.create_page("keks")
 database.create_page("kekos")
 database.create_page("keks")
 
-database.insert_item("kekos", [12342, True, "Hello World"])
-database.insert_item("kekos", [4343, False, "Use the force, Luke"])
-database.insert_item("kekos", [2435478, True, "You underestimate my power!!"])
-
-print(database.get_list_of_tablenames())
-for i in database.get_list_of_tablenames():
-	print(database._get_table_meta(i))
+database.insert_item("kekos", ["Hello World", 12342, True])
+database.insert_item("kekos", ["Use the force, Luke", 4343, False])
+database.insert_item("kekos", ["You underestimate my power!!", 2435478, True])
 
 print()
 print(database.select_from("kekos", ["*"]))
@@ -60,3 +56,10 @@ print(database.select_from("kekos", ["Talka", "Palka"]))
 print(database.select_from("kekos", ["Lalka"]))
 print(database.select_from("kekos", ["Palka"]))
 print(database.select_from("kekos", ["Talka"]))
+
+print(database.execute("show create table 'kekos'"))
+print(database.execute("select Lalka, Palka from 'kekos'"))
+
+print(database.get_list_of_tablenames())
+for i in database.get_list_of_tablenames():
+	print(database._get_table_meta(i))

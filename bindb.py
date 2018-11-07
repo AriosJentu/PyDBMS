@@ -1,6 +1,7 @@
 import os
 import consts
 import exceptions as exc
+import parser
 
 #Default switch function to types for getting type bytesize
 available_types = ["int", "str", "bol"] 										#Available types
@@ -642,6 +643,35 @@ class BinaryDataBase:
 
 			return results
 
+	def show_create(self, tablename):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise exc.DBConnectionException(0)									#Database isn't connected
+
+		#Get table meta information
+		meta = self._get_table_meta(tablename)
+
+		fields = meta["fields"]
+		types = meta["types"]
+		typearr = ["`%s` %s"%(fields[i], types[i]) for i in range(len(types))]
+
+		query = (
+			"CREATE TABLE `" + meta["name"] + "` (\n" +
+			"\t\t\t\t\t`" + ', '.join(typearr) + "`\n"
+			"\t\t\t\t" + ");"
+		)
+
+		return (
+			"===================================================" + "\n" +
+			'\t\tTable:\t"' + meta["name"] + '"\n' +
+			"\t   Fields:\t" + '["' + '", "'.join(fields) + '"]' + "\n"
+			"\t    Types:\t" + '["' + '", "'.join(types) + '"]' + "\n"
+			" Create Table:\t" + query + "\n" +
+			"==================================================="
+		)
+
+
 	def get_list_of_tablenames(self):
 
 		#Check for opened table:
@@ -660,3 +690,22 @@ class BinaryDataBase:
 				names[name] = tabindex
 
 		return names
+
+	def execute(self, sqlquery):
+
+		if sqlquery.lower().find("show create") >= 0:
+			
+			query = parser.Parser.show_create_basic(sqlquery)["show"]
+			return self.show_create(query["name"])
+
+		elif sqlquery.lower().find("create") >= 0:
+			pass
+
+		elif sqlquery.lower().find("select") >= 0:
+
+			query = parser.Parser.select_basic(sqlquery)["select"]
+			print(query)
+			return self.select_from(query["table"], query["values"])
+
+		elif sqlquery.lower().find("insert") >= 0:
+			pass

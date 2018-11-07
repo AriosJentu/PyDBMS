@@ -121,7 +121,7 @@ class Parser:
 
 		result = {
 			"select": {
-				"tableName": "",
+				"table": "",
 				"values": []
 			},
 		}	
@@ -146,18 +146,18 @@ class Parser:
 
 				values.append(list_[i])	
 
-		result["select"]["tableName"] = tableName
+		result["select"]["table"] = tableName
 		result["select"]["values"] = values
 
 		return result
 
 	@staticmethod
-	def input_basic(sqlstring):
+	def insert_basic(sqlstring):
 
 
 		result = {
 			"insert": {
-				"tableName": "",
+				"table": "",
 				"values": []
 			},
 		}	
@@ -200,7 +200,7 @@ class Parser:
 
 				expName = list_[i]
 				
-				result["insert"]["tableName"] = expName
+				result["insert"]["table"] = expName
 				#print(expName)
 
 			if ( 
@@ -221,4 +221,4 @@ class Parser:
 #print(Parser.create_basic("create table 'KEKOS' ('id', 'name', \"HUI\")"))
 #print(Parser.show_create_basic("show create table 'KEKOS'"))
 #print(Parser.select_basic("select a, b from test"))
-print(Parser.input_basic("insert into test values (a, 'b')"))
+#print(Parser.insert_basic("insert into test values (a, 'b')"))
