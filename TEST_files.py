@@ -1,53 +1,62 @@
-from connector import DataBase 					#Import DataBase
+import pytest
+import bindb
+import exceptions as exc
 
-DataBase()										#Nothing happens
+database = bindb.BinaryDataBase("testdbss.jpdb")
+unexistdatabase = bindb.BinaryDataBase("testdbsss.jpdb")
 
-db = DataBase.open("database.jpdb")				#Creating database 
-db._remove_file("test_unremovable.txt")			#File doesn't exist
-db._remove_file("test_unrm_create.txt")			#File doesn't exist
-db._create_file("test_unrm_create.txt")			#File created
-db._remove_file("test_unrm_create.txt")			#File removed
-db._create_file("not_only_meta.txt")			#File created
-db._create_file("helloworld/testing/dir.txt")	#Directory doesn't exist
-db._create_file("helloworld/testingdir.txt")	#Directory doesn't exist
-db._create_directory("helloworld")				#Directory created
-db._create_directory("helloworld")				#Directory exist
-db._remove_directory("helloworld/test/tst")		#Directory doesn't exist
-db._create_directory("helloworld/test/tst")		#Can't create directory
-db._create_directory("helloworld/test")			#Directory created
-db._create_file("helloworld/test/f.txt")		#File created
+database.create()
 
-print(db._is_file_exist("helloworld/t/k/l"))		#False
-print(db._is_file_exist("helloworld/test/f.txt"))	#True
-print(db._is_directory_exist("helloworld/t/k/l"))	#False
-print(db._is_directory_exist("helloworld/test"))	#True
-db._remove_directory("helloworld/test")				#Directory removed
-print(db._is_directory_exist("helloworld/test"))	#False
-print(db._is_file_exist("helloworld/test/f.txt"))	#False
+def test_connect_error():
+	with pytest.raises(exc.DBConnectionException):
+		database.connect()	#Can't connect twice
 
-db.create_table("default", ["tst", "field2"])		#Database's Table created
-db.create_table("default", ["tst", "field2"])		#Database's Table exists
-db.create_table("default2", ["tst", "field2"])		#Database's Table created
-db.create_table("default3", ["tst", "field2"])		#Database's Table created
-s = db.create_table("default4", ["tst", "field2"])	#Database's Table created
-db.drop_table("default3")							#Database's Table dropped
-db.drop_table("default3")							#Database's Table isn't exist
-s.drop_table()										#Database's Table dropped
+def test_open_error():
+	with pytest.raises(exc.DBFileException):
+		unexistdatabase.connect()	#File doesn't exists
 
-db.execute("create table 'testing' ('id', 'name')")	#Database's Table created
-show = db.execute("show create table 'testing'")	#Return table
-print(show)											#Printing
+def test_create_error():
+	with pytest.raises(exc.DBTableException):
+		database.create_table("keks", ["Integer"], ["int"])
+		database.create_table("keks", ["Another", "Other"], ["str", "int"])
 
-table = db.get_table("default2")			#Database's Table created
+def test_count_of_fields():
+	with pytest.raises(exc.DBTableException):
+		database.create_table("keks", ["Another"], ["str", "int"])	
 
-print(db.get_file_list())					#Print list of files to commit
-db.commit()									#Commit database to file
-db._create_file("create_before_close.txt")	#File created
+def test_insert_error():
+	with pytest.raises(exc.DBValueException):
+		database.insert_item("keks", ["kek"])	#String, not int
 
-print(db.get_meta_info())					#Print DataBase meta info
+def test_insert_fields_error():
+	with pytest.raises(exc.DBValueException):
+		database.insert_item("keks", [1, 2])	#Too much items
 
-#print("\n\n")								#Print separators
-#print(table.show_create())					#Print table creation
+def test_insert_nothing_error():
+	with pytest.raises(exc.DBValueException):
+		database.insert_item("keks", [])	#Too few items
 
+#----------LOCAL TEST
 
-db.close(False)									#Close database
+database = bindb.BinaryDataBase("testdb.jpdb")
+database.create()
+database.create_table("keks", ["Integer"], ["int"])
+database.create_table("kekos", ["Lalka", "Palka", "Talka"], ["int", "bol", "str"])
+database.create_page("keks")
+database.create_page("kekos")
+database.create_page("keks")
+
+database.insert_item("kekos", [12342, True, "Hello World"])
+database.insert_item("kekos", [4343, False, "Use the force, Luke"])
+database.insert_item("kekos", [2435478, True, "You underestimate my power!!"])
+
+print(database.get_list_of_tablenames())
+for i in database.get_list_of_tablenames():
+	print(database._get_table_meta(i))
+
+print()
+print(database.select_from("kekos", ["*"]))
+print(database.select_from("kekos", ["Talka", "Palka"]))
+print(database.select_from("kekos", ["Lalka"]))
+print(database.select_from("kekos", ["Palka"]))
+print(database.select_from("kekos", ["Talka"]))
