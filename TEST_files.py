@@ -40,8 +40,8 @@ def test_insert_nothing_error():
 
 database = bindb.BinaryDataBase("testdb.jpdb")
 database.create()
-database.create_table("keks", ["Integer"], ["int"])
 database.create_table("kekos", ["Lalka", "Palka", "Talka"], ["str", "int", "bol"])
+database.create_table("keks", ["Integer"], ["int"])
 database.create_page("keks")
 database.create_page("kekos")
 database.create_page("keks")

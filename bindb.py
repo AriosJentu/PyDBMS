@@ -311,6 +311,7 @@ class BinaryDataBase:
 		#Open file
 		with self.__file.open("r+") as file:
 
+			saved = tabindex
 			file.writestr(table["name"], starts=tabindex, cbytes=28)			#Requred TableName size is 28
 			file.writeint(0, starts=tabindex+28, cbytes=3)						#Write count of items in table
 			file.writeint(len(table["fields"]), starts=tabindex+31)				#Write 1 byte to count of fields
@@ -340,8 +341,14 @@ class BinaryDataBase:
 			#Write index of start
 			file.writeint(findex, starts=tabindex, cbytes=3)
 			file.writeint(rowlength, starts=tabindex+30, cbytes=2)
+
+			#Write page meta info
+			file.writeint(0, starts=findex, cbytes=2)							#Save count of fields in meta
+			file.writeint(0, starts=findex+2, cbytes=2)						#Save count of removed fields in meta
+			file.writeint(saved, starts=findex+4, cbytes=2)					#Save table meta position
 			
-			#Write it's table 
+			#Write table's first page  
+			findex += 6
 			for i in range(consts.pagesize):
 				rowindex = findex + i*rowlength
 				file.writeint(0, starts=rowindex, cbytes=rowlength)
@@ -387,8 +394,14 @@ class BinaryDataBase:
 
 			#Write page index to table meta info
 			file.writeint(last_index, starts=pos, cbytes=3)
+			
+			#Write page meta info
+			file.writeint(0, starts=last_index, cbytes=2)							#Save count of fields in meta
+			file.writeint(0, starts=last_index+2, cbytes=2)						#Save count of removed fields in meta
+			file.writeint(tabindex, starts=last_index+4, cbytes=2)					#Save table meta position
 
 			#Write page to the end of file
+			last_index += 6
 			for i in range(consts.pagesize):
 				rowindex = last_index + i*rowlength
 				file.writeint(0, starts=rowindex, cbytes=rowlength)
@@ -513,6 +526,7 @@ class BinaryDataBase:
 				values[i] = get_default_value(meta["types"][i])
 
 		#Calculate index
+		"""
 		pagenumber = meta["count"]//consts.pagesize								#Calculate page, where to insert
 		onpageindex = meta["count"]%consts.pagesize								#Calculate index on page
 
@@ -521,22 +535,48 @@ class BinaryDataBase:
 			index = self._create_page_from_table_index(meta["index"])
 			meta["pagespos"].append(index)
 
+		"""
+
 		with self.__file.open("r+") as file:
 
-			#Calculate positions
-			pagepos = meta["pagespos"][pagenumber]								#Get last page position
-			value_pos = pagepos + onpageindex*meta["rowlength"]					#Calculate index on page
+			#Calculate indexes
+			if len(meta["pagespos"]) == 0:
+				
+				pagepos = self._create_page_from_table_index(meta["index"])
+				count = 0
+				rcount = 0
+			
+			else:
 
+				#Read every pages indexes
+				for i in meta["pagespos"]:
+
+					pagepos = i 												#Set page
+					rcount = file.readint(starts=pagepos, cbytes=2)				#Read count of elements on page
+					count = rcount + file.readint(starts=pagepos+2, cbytes=2)
+
+					#Check for count
+					if count < consts.pagesize:
+						break
+
+			#Check for count elements on page
+			if count >= consts.pagesize:
+				pagepos = self._create_page_from_table_index(meta["index"])		#Create table if count of elements higher than available elements
+				count = 0														#On empty page there is no elements
+			
+			#Calculate positions
+			value_pos = pagepos + count*meta["rowlength"] + 6					#Calculate index on page
 
 			#Append count of elements
-			file.writeint(meta["count"]+1, starts=meta["index"]+28, cbytes=3)
+			file.writeint(meta["count"]+1, starts=meta["index"]+28, cbytes=3)	#To meta information about table
+			file.writeint(rcount+1, starts=pagepos)									#To meta information about page
 
 			#Write existance and identifier
 			file.writeint(1, starts=value_pos)									#1 means existance
 			file.writeint(meta["count"], starts=value_pos+1, cbytes=3)			#Count is index
-			
 
 			value_pos += 4
+
 			#Write values	
 			for i, v in enumerate(values):
 
@@ -551,6 +591,7 @@ class BinaryDataBase:
 
 				#Append position
 				value_pos += bytescnt
+
 
 	def _get_one_row(self, tableindex, rowid=0, findexes=[], meta=False):
 
@@ -568,7 +609,8 @@ class BinaryDataBase:
 
 		#Get byteindex of page and of item
 		pageindx = meta["pagespos"][pageid]
-		readpos = pageindx + tabindx*meta["rowlength"]
+		readpos = pageindx + tabindx*meta["rowlength"] + 6
+		print("READING FROM: ", readpos)
 
 		#Read file
 		with self.__file.open("r") as file:

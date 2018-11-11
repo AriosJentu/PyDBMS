@@ -21,7 +21,6 @@ class DBException(Exception):
 		12:	"Incorrect values count for INSERT: Need '{}', Got: '{}'.",
 		13:	"Value with index '{}' need to be '{}', but got '{}'.",
 		14:	"Data Base already connected.",
-
 	}
 	
 	def __init__(self, message, *args):
