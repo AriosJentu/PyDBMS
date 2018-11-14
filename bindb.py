@@ -431,7 +431,8 @@ class BinaryDataBase:
 			if type(v) != get_type_from_str(meta["types"][i]) and v != None:
 			
 				#Send exception
-				raise exc.DBValueException(2, 
+				raise exc.DBValueException(2,
+					"INSERT", 
 					i,
 					str(get_type_from_str(meta["types"][i])),
 					str(type(v)), 
@@ -612,9 +613,10 @@ class BinaryDataBase:
 			s = self._get_one_row(meta["index"], i, indexes, meta)
 			f = self._get_one_row(meta["index"], i, sindexes, meta)
 
+			#If this row isn't removed
 			if s:
 				#Set variables values
-				elements = {sfields[i]: f[i] for i in range(len(sfields))}
+				elements = {sfields[j]: f[j] for j in range(len(sfields))}
 				
 				#Check for "where" expression				
 				if where(expr, elements):
@@ -646,8 +648,6 @@ class BinaryDataBase:
 		#Open file
 		with self.__file.open("r+") as file:
 			
-			meta["count"] = meta["count"] - 1
-
 			#Mark for removable
 			file.writeint(2, starts=readpos, cbytes=1)		
 
@@ -656,7 +656,6 @@ class BinaryDataBase:
 
 			file.writeint(cnt-1, starts=pageindx, cbytes=2)					
 			file.writeint(rcnt+1, starts=pageindx+2, cbytes=2)					
-			file.writeint(meta["count"], starts=meta["index"]+28, cbytes=3)	#To meta information about table
 
 
 	def delete_from(self, tablename, expr="1"):
@@ -667,27 +666,138 @@ class BinaryDataBase:
 
 		#Get table meta information
 		meta = self._get_table_meta(tablename)
-		print("REMOVING", meta)
 
 		cnt = 0																	#Count of removed items
-
 		#Read data
 		for i in range(meta["count"]):
 
 			#Get by one rows
 			s = self._get_one_row(meta["index"], i, meta=meta)
 
-			#Set variables values
-			elements = {
-				meta["fields"][j]: s[j] for j in range(len(meta["fields"]))
-			}
+			#If this row isn't removed
+			if s:
+	
+				#Set variables values
+				elements = {
+					meta["fields"][j]: s[j] for j in range(len(meta["fields"]))
+				}
 
-			if where(expr, elements):
-				self._mark_for_removable(meta["index"], i, meta)
-				cnt += 1
+				#Check for expression			
+				if where(expr, elements):
+					self._mark_for_removable(meta["index"], i, meta)
+					cnt += 1
 
 		return cnt
 
+	def _update_row(self, tableindex, rowid=0, findexes=False, values=[], meta=False):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise exc.DBConnectionException(0)									#Database isn't connected
+
+		#Get table meta information
+		if not meta:
+			meta = self._get_meta_from_index(tableindex)
+
+		#Check for indexes:
+		if not findexes:
+			findexes = self._calc_indexes(tableindex, meta=meta)
+
+		#Calculate page indexes
+		pageid = rowid//consts.pagesize
+		tabindx = rowid%consts.pagesize
+
+		#Get byteindex of page and of item
+		pageindx = meta["pagespos"][pageid]
+		readpos = pageindx + tabindx*meta["rowlength"] + 6
+
+		#Write file
+		with self.__file.open("r+") as file:
+			
+			is_exist = file.readint(starts=readpos, cbytes=1)					#Check row for existance
+				
+			#If file marked as remove
+			if is_exist == 2:
+				#Skip it
+				return None
+
+			#Write all indexes of fields
+			for k, i in enumerate(findexes):
+
+				#Calculate type, start and size of information
+				ftype = meta["types"][i[2]]				
+				start = readpos+i[0]
+				size = i[1]
+				
+				#Read info
+				obj = file.writetype(ftype, values[k], starts=start, cbytes=size)
+
+
+	def update(self, tablename, fields=False, values=[], expr="1"):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise exc.DBConnectionException(0)									#Database isn't connected
+
+		#Get table meta information
+		meta = self._get_table_meta(tablename)
+
+		sfields = meta["fields"]
+		#If select all, set fields index
+		if "*" in fields:
+			fields = meta["fields"]
+
+		types = []
+		for i in fields:
+			types.append(meta["types"][meta["fields"].index(i)])
+
+		#Wrong field count
+		if len(fields) != len(values):
+			raise exc.DBValueException(3)										#Count of fields and values are different
+		
+		#Check for types
+		for i, v in enumerate(values):
+
+			#If it isn't none and types are not equal
+			if type(v) != get_type_from_str(types[i]) and v != None:
+			
+				#Send exception
+				raise exc.DBValueException(2,
+					"INSERT", 
+					i,
+					str(get_type_from_str(types[i])),
+					str(type(v)), 
+				)
+
+			#If value is None
+			elif v == None:
+				#Write default value
+				values[i] = get_default_value(types[i])
+
+		#Get indexes
+		indexes = self._calc_indexes(meta["index"], fields)
+		sindexes = self._calc_indexes(meta["index"], sfields)
+
+		cnt = 0																	#Count of removed items
+		#Read data
+		for i in range(meta["count"]):
+
+			#Get by one rows
+			s = self._get_one_row(meta["index"], i, indexes, meta)
+			f = self._get_one_row(meta["index"], i, sindexes, meta)
+
+			#If this row isn't removed
+			if s:
+
+				#Set variables values
+				elements = {sfields[k]: f[k] for k in range(len(sfields))}
+				
+				#Check for "where" expression				
+				if where(expr, elements):
+					self._update_row(meta["index"], i, indexes, values, meta=meta)
+					cnt = cnt+1
+
+		return cnt
 
 	def show_create(self, tablename):
 

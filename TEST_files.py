@@ -66,6 +66,15 @@ print("\nQuery:")
 for i in database.select_from("kekos", ["*"], "len(Lalka) > 14 and Palka%2 == 0"):
 	print("\t", i)
 
+print("\nUpdated: ")
+print(database.update("kekos", ["Lalka"], ["KEKOSIK"], "len(Lalka) < 14"))
+print(database.update("kekos", ["Palka", "Galka"], [123, True], "len(Lalka) > 14"))
+print()
+
+print("All:")
+for i in database.select_from("kekos", ["*"]):
+	print("\t", i)
+
 print()
 print(database.select_from("kekos", ["Galka", "Palka"]))
 print(database.select_from("kekos", ["Lalka"]))
@@ -74,7 +83,6 @@ print(database.select_from("kekos", ["Galka"]))
 
 print("\nRemoved: ")
 print(database.delete_from("kekos", "len(Lalka) > 14"))
-print()
 
 print(database.execute("show create table 'kekos'"))
 print(database.execute("select Lalka, Palka from 'kekos'"))
