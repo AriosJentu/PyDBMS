@@ -22,7 +22,8 @@ class Node:
 
 def p_start(p):
     '''start : create
-             | show'''
+             | show
+             | select'''
 
     p[0] = p[1]
 
@@ -41,7 +42,12 @@ def p_show(p):
     p[3] = p[3].add_parts([p[4]])
     p[0] = p[1].add_parts([p[3]])
 
-     
+def p_select(p):
+    '''select : SELECT select_body'''   
+
+    p[1] = Node(p[1], [])
+    p[0] = p[1].add_parts([p[2]])
+
 
 def p_create_body(p):
     '''create_body : TABLE NAME LPAREN values RPAREN'''
@@ -50,28 +56,49 @@ def p_create_body(p):
     p[0] = p[0].add_parts([p[2]])
     p[0] = p[0].add_parts([p[4]])
 
+def p_select_body(p):
+    '''select_body : values FROM NAME
+                   | LPAREN values RPAREN FROM NAME'''
+
+    p[0] = Node('TABLE', [])
+    if len(p) == 4:
+        p[0] = p[0].add_parts([p[3]])
+        p[0] = p[0].add_parts([p[1]])    
+    else:
+        p[0] = p[0].add_parts([p[5]])
+        p[0] = p[0].add_parts([p[2]]) 
+
+
 
 def p_values(p):
     '''values : var 
               | values COMMA var'''
-    if len(p) == 1:
-        p[0] = Node('vars', [])
-    elif len(p) == 2:
+
+    if len(p) == 2:
         p[0] = Node('vars', [p[1]])
     else:
         p[0] = p[1].add_parts([p[3]])
 
+#use for tables names and names of variables
 def p_var(p):
-    '''var : NAME type'''
+    '''var : NAME
+           | NAME type'''
+
     p[0] = Node('var', [])
     p[0] = p[0].add_parts([p[1]])
-    p[0] = p[0].add_parts([p[2]])
+
+    #for vars types
+    if(len(p) == 3):
+        p[0] = p[0].add_parts([p[2]])
 
 def p_type(p):
     '''type : int 
             | str
-            | bol'''    
+            | bol'''   
+
     p[0] = p[1]   
+
+
 
 parser = yacc.yacc()
 

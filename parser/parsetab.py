@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = 'COMMA CREATE LPAREN NAME RPAREN SHOW TABLE VAR bol int strstart : create\n             | showcreate : CREATE create_bodyshow : SHOW CREATE TABLE NAMEcreate_body : TABLE NAME LPAREN values RPARENvalues : var \n              | values COMMA varvar : NAME typetype : int \n            | str\n            | bol'
+_lr_signature = 'COMMA CREATE FROM LPAREN NAME RPAREN SELECT SHOW TABLE VAR bol int strstart : create\n             | show\n             | selectcreate : CREATE create_bodyshow : SHOW CREATE TABLE NAMEselect : SELECT select_bodycreate_body : TABLE NAME LPAREN values RPARENselect_body : values FROM NAME\n                   | LPAREN values RPAREN FROM NAMEvalues : var \n              | values COMMA varvar : NAME\n           | NAME typetype : int \n            | str\n            | bol'
     
-_lr_action_items = {'CREATE':([0,5,],[4,8,]),'SHOW':([0,],[5,]),'$end':([1,2,3,6,12,20,],[0,-1,-2,-3,-4,-5,]),'TABLE':([4,8,],[7,10,]),'NAME':([7,10,11,21,],[9,12,13,13,]),'LPAREN':([9,],[11,]),'int':([13,],[17,]),'str':([13,],[18,]),'bol':([13,],[19,]),'RPAREN':([14,15,16,17,18,19,22,],[20,-6,-8,-9,-10,-11,-7,]),'COMMA':([14,15,16,17,18,19,22,],[21,-6,-8,-9,-10,-11,-7,]),}
+_lr_action_items = {'CREATE':([0,6,],[5,10,]),'SHOW':([0,],[6,]),'SELECT':([0,],[7,]),'$end':([1,2,3,4,8,11,26,27,32,33,],[0,-1,-2,-3,-4,-6,-5,-8,-7,-9,]),'TABLE':([5,10,],[9,17,]),'LPAREN':([7,16,],[14,25,]),'NAME':([7,9,14,17,18,19,25,31,],[13,16,13,26,27,13,13,33,]),'FROM':([12,13,15,20,21,22,23,28,29,],[18,-12,-10,-13,-14,-15,-16,-11,31,]),'COMMA':([12,13,15,20,21,22,23,24,28,30,],[19,-12,-10,-13,-14,-15,-16,19,-11,19,]),'RPAREN':([13,15,20,21,22,23,24,28,30,],[-12,-10,-13,-14,-15,-16,29,-11,32,]),'int':([13,],[21,]),'str':([13,],[22,]),'bol':([13,],[23,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'start':([0,],[1,]),'create':([0,],[2,]),'show':([0,],[3,]),'create_body':([4,],[6,]),'values':([11,],[14,]),'var':([11,21,],[15,22,]),'type':([13,],[16,]),}
+_lr_goto_items = {'start':([0,],[1,]),'create':([0,],[2,]),'show':([0,],[3,]),'select':([0,],[4,]),'create_body':([5,],[8,]),'select_body':([7,],[11,]),'values':([7,14,25,],[12,24,30,]),'var':([7,14,19,25,],[15,15,28,15,]),'type':([13,],[20,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -29,13 +29,18 @@ _lr_productions = [
   ("S' -> start","S'",1,None,None,None),
   ('start -> create','start',1,'p_start','pars.py',24),
   ('start -> show','start',1,'p_start','pars.py',25),
-  ('create -> CREATE create_body','create',2,'p_create','pars.py',30),
-  ('show -> SHOW CREATE TABLE NAME','show',4,'p_show','pars.py',36),
-  ('create_body -> TABLE NAME LPAREN values RPAREN','create_body',5,'p_create_body','pars.py',47),
-  ('values -> var','values',1,'p_values','pars.py',55),
-  ('values -> values COMMA var','values',3,'p_values','pars.py',56),
-  ('var -> NAME type','var',2,'p_var','pars.py',65),
-  ('type -> int','type',1,'p_type','pars.py',71),
-  ('type -> str','type',1,'p_type','pars.py',72),
-  ('type -> bol','type',1,'p_type','pars.py',73),
+  ('start -> select','start',1,'p_start','pars.py',26),
+  ('create -> CREATE create_body','create',2,'p_create','pars.py',31),
+  ('show -> SHOW CREATE TABLE NAME','show',4,'p_show','pars.py',37),
+  ('select -> SELECT select_body','select',2,'p_select','pars.py',46),
+  ('create_body -> TABLE NAME LPAREN values RPAREN','create_body',5,'p_create_body','pars.py',53),
+  ('select_body -> values FROM NAME','select_body',3,'p_select_body','pars.py',60),
+  ('select_body -> LPAREN values RPAREN FROM NAME','select_body',5,'p_select_body','pars.py',61),
+  ('values -> var','values',1,'p_values','pars.py',72),
+  ('values -> values COMMA var','values',3,'p_values','pars.py',73),
+  ('var -> NAME','var',1,'p_var','pars.py',81),
+  ('var -> NAME type','var',2,'p_var','pars.py',82),
+  ('type -> int','type',1,'p_type','pars.py',91),
+  ('type -> str','type',1,'p_type','pars.py',92),
+  ('type -> bol','type',1,'p_type','pars.py',93),
 ]
