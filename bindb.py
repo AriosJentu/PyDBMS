@@ -1,7 +1,18 @@
-import os
+import binfile
 import consts
 import exceptions as exc
 import parser
+
+def where(expr, variables):
+	return bool(
+		eval(
+			expr.lower(), 
+			{
+				v.lower(): variables[v] for v in variables.keys()
+			}
+		)
+	)
+
 
 #Default switch function to types for getting type bytesize
 available_types = ["int", "str", "bol"] 										#Available types
@@ -31,139 +42,19 @@ def get_default_value(types):
 		(types == "str"): "",
 	}[True]
 
-
-#Class to work with binary file like as default file 
-class BinaryFile:
-
-	#Class for Binary File
-
-	#Initializer (Open File)
-	def __init__(self, filename):
-
-		self.__filename = filename
-		self.__file = None
-
-	def open(self, ftype="r"):
-		self.__file = open(self.__filename, ftype+"b")
-		return self
-
-	#Default functions of Binary File:
-	def close(self):
-		self.__file.close()
-		self.__file = None
-
-	def __enter__(self):
-		return self
-
-	def __exit__(self, *args):
-		return self.close()
-
-	def read(self, cbytes):
-		return self.__file.read(cbytes)
-
-	def tell(self):
-		return self.__file.tell()
-
-	def seek(self, offset, whence=0):
-		return self.__file.seek(offset, whence)
-
-	#Custom functions:
-	def writestr(self, string, starts=-1, cbytes=1):
-		#Inserting string, converted to bytes, to file with fixed bytes count
-
-		#Making substring
-		string = string[:cbytes]
-		zeros = consts.binzero * (cbytes - len(string))
-
-		#Check for starting
-		if starts >= 0:
-			self.seek(starts)
-
-		#Write info to file
-		return self.__file.write(zeros+string.encode())
-
-	def writeint(self, intg, starts=-1, cbytes=1, signed=False):
-		#Inserting integer, converted to bytes, to file with fixed bytes count
-
-		#Convert integer to bytes
-		number = intg.to_bytes(cbytes, "little")
-
-		#Check for starting
-		if starts >= 0:
-			self.seek(starts)
-		
-		#Write info to file
-		return self.__file.write(number)
-
-	def writebool(self, boolval, starts=-1, cbytes=1):
-		#Inserting boolean value converted to integer
-		return self.writeint(int(boolval), starts, cbytes)
-
-	def readstr(self, starts=-1, cbytes=1):
-		#Getting bytes from file, converted to string with fixed bytes count
-
-		#Check for starting
-		if starts >= 0:
-			self.seek(starts)
-
-		#Getting string
-		string = self.__file.read(cbytes).replace(consts.binzero, b"")
-
-		#Return string
-		return string.decode()
-
-	def readint(self, starts=-1, cbytes=1, signed=False):
-		#Getting bytes from file, converted to int with fixed bytes count
-
-		#Check for starting
-		if starts >= 0:
-			self.seek(starts)
-
-		#Getting integer
-		intbytes = bytes(self.__file.read(cbytes))
-		ints = int.from_bytes(intbytes, "little")
-
-		#Return string
-		return ints
-
-	def readbool(self, starts=-1, cbytes=1):
-		#Read boolean value as integer
-		return bool(self.readint(starts, cbytes)) 
-
-	def writetype(self, otype, *args, **kwargs):
-		#Write to file from type of object
-
-		if otype == "int":
-			self.writeint(*args, **kwargs)
-		elif otype == "str":
-			self.writestr(*args, **kwargs)
-		elif otype == "bol":
-			self.writebool(*args, **kwargs)
-
-	def readtype(self, otype, *args, **kwargs):
-		#Read from file as type of object
-
-		if otype == "int":
-			return self.readint(*args, **kwargs)
-		elif otype == "str":
-			return self.readstr(*args, **kwargs)
-		elif otype == "bol":
-			return self.readbool(*args, **kwargs)
-
-
 #Class for binary database
 class BinaryDataBase:
 
 	def __init__(self, name):
 
 		self.__name = name
-		self.__file = BinaryFile(name)
+		self.__file = binfile.BinaryFile(name)
 		self.__tables_count = 1
 		self.__opened = False
 
 	def create(self):
 
-		#if os.path.isfile(self.__name):
+		#if self.__file.is_file_exist():
 		#	raise exc.DBFileException(0, self.__name)							#File Exist
 
 		name = self.__name
@@ -254,7 +145,7 @@ class BinaryDataBase:
 			raise exc.DBConnectionException(1)									#Database already connected
 
 		#Check for existance
-		if not os.path.isfile(self.__name):
+		if not self.__file.is_file_exist():
 			raise exc.DBFileException(1, self.__name)							#File doesn't exist
 		
 		with self.__file.open("r") as file:
@@ -344,8 +235,8 @@ class BinaryDataBase:
 
 			#Write page meta info
 			file.writeint(0, starts=findex, cbytes=2)							#Save count of fields in meta
-			file.writeint(0, starts=findex+2, cbytes=2)						#Save count of removed fields in meta
-			file.writeint(saved, starts=findex+4, cbytes=2)					#Save table meta position
+			file.writeint(0, starts=findex+2, cbytes=2)							#Save count of removed fields in meta
+			file.writeint(saved, starts=findex+4, cbytes=2)						#Save table meta position
 			
 			#Write table's first page  
 			findex += 6
@@ -424,12 +315,12 @@ class BinaryDataBase:
 
 
 	def _get_meta_from_index(self, tabindex):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise exc.DBConnectionException(0)								#Database isn't connected
 			
 		with self.__file.open("r") as file:
-	
-			#Check for opened table:
-			if not self.__opened:
-				raise exc.DBConnectionException(0)								#Database isn't connected
 
 			#Get table name from index
 			name = file.readstr(starts=tabindex, cbytes=28)
@@ -480,6 +371,32 @@ class BinaryDataBase:
 			return meta
 
 
+	def _get_page_meta(self, pageindx, opened=False):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise exc.DBConnectionException(0)		
+			
+		if not opened:
+			opened = self.__file.open("r")
+
+		count = opened.readint(starts=pageindx, cbytes=2)
+		rcount = opened.readint(starts=pageindx+2, cbytes=2)
+		pos = opened.readint(starts=pageindx+2, cbytes=2)
+
+		meta = {
+			"count": count,
+			"removed": rcount,
+			"filled": count+rcount,
+			"tablemeta": pos,
+		}
+			
+		if not opened:
+			self.__file.close()
+
+		return meta
+
+
 	def _get_table_meta(self, tablename):
 
 		#Check for opened table:
@@ -525,18 +442,7 @@ class BinaryDataBase:
 				#Write default value
 				values[i] = get_default_value(meta["types"][i])
 
-		#Calculate index
-		"""
-		pagenumber = meta["count"]//consts.pagesize								#Calculate page, where to insert
-		onpageindex = meta["count"]%consts.pagesize								#Calculate index on page
-
-		#If page number is equal to count of pages - create new page (cuz index doesn't exists)
-		if pagenumber == len(meta["pagespos"]):
-			index = self._create_page_from_table_index(meta["index"])
-			meta["pagespos"].append(index)
-
-		"""
-
+		#Open file
 		with self.__file.open("r+") as file:
 
 			#Calculate indexes
@@ -545,13 +451,15 @@ class BinaryDataBase:
 				pagepos = self._create_page_from_table_index(meta["index"])
 				count = 0
 				rcount = 0
-			
+
 			else:
 
 				#Read every pages indexes
 				for i in meta["pagespos"]:
 
 					pagepos = i 												#Set page
+					pagemeta = self._get_page_meta(pagepos, opened=file)
+
 					rcount = file.readint(starts=pagepos, cbytes=2)				#Read count of elements on page
 					count = rcount + file.readint(starts=pagepos+2, cbytes=2)
 
@@ -593,7 +501,7 @@ class BinaryDataBase:
 				value_pos += bytescnt
 
 
-	def _get_one_row(self, tableindex, rowid=0, findexes=[], meta=False):
+	def _get_one_row(self, tableindex, rowid=0, findexes=False, meta=False):
 
 		#Check for opened table:
 		if not self.__opened:
@@ -603,6 +511,10 @@ class BinaryDataBase:
 		if not meta:
 			meta = self._get_meta_from_index(tableindex)
 
+		#Check for indexes:
+		if not findexes:
+			findexes = self._calc_indexes(tableindex, meta=meta)
+
 		#Calculate page indexes
 		pageid = rowid//consts.pagesize
 		tabindx = rowid%consts.pagesize
@@ -610,11 +522,18 @@ class BinaryDataBase:
 		#Get byteindex of page and of item
 		pageindx = meta["pagespos"][pageid]
 		readpos = pageindx + tabindx*meta["rowlength"] + 6
-		print("READING FROM: ", readpos)
 
 		#Read file
 		with self.__file.open("r") as file:
 			
+			is_exist = file.readint(starts=readpos, cbytes=1)					#Check row for existance
+				
+			#If file marked as remove
+			if is_exist == 2:
+				#Skip it
+				return None
+				
+
 			#Result array
 			res = []
 
@@ -635,17 +554,14 @@ class BinaryDataBase:
 			#Return array
 			return res
 
-	def select_from(self, tablename, fields=[], rtype="array"):
-
-		#Check for opened table:
-		if not self.__opened:
-			raise exc.DBConnectionException(0)									#Database isn't connected
+	def _calc_indexes(self, tableindex, fields=False, meta=False):
 
 		#Get table meta information
-		meta = self._get_table_meta(tablename)
+		if not meta:
+			meta = self._get_meta_from_index(tableindex)
 
-		#If select all, set fields index
-		if fields[0] == "*":
+		#Check for correctness:
+		if not fields:
 			fields = meta["fields"]
 
 		#Create array of fields information - shifting, bytescount and type id
@@ -666,24 +582,109 @@ class BinaryDataBase:
 			#Append size to current byteindex
 			byteindx += size
 
+		return indexes
+
+	def select_from(self, tablename, fields=[], expr="1", rtype="array"):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise exc.DBConnectionException(0)									#Database isn't connected
+
+		#Get table meta information
+		meta = self._get_table_meta(tablename)
+
+		#If select all, set fields index
+		if "*" in fields:
+			fields = meta["fields"]
+
+		#Get indexes
+		indexes = self._calc_indexes(meta["index"], fields)
+
+		#Result array of select
+		results = []
+		
+		#Read data
+		for i in range(meta["count"]):
+
+			#Get by one rows
+			s = self._get_one_row(meta["index"], i, indexes, meta)
+
+			if s:
+				#Set variables values
+				elements = {fields[i]: s[i] for i in range(len(fields))}
+				
+				#Check for "where" expression				
+				if where(expr, elements):
+					results.append(s)											#Append value to result
+
+
 		#If type of presentation is array
 		if rtype == "array":
-	
-			#Result array of select
-			results = []
-			
-			#Read data
-			for i in range(meta["count"]):
-
-				#Get by one rows
-				results.append(self._get_one_row(
-					meta["index"],
-					i,
-					indexes,
-					meta
-				))
-
 			return results
+
+	def _mark_for_removable(self, tableindex, rowid=0, meta=False):
+
+		#Check for opened table:
+		if not self.__opened:
+			raise exc.DBConnectionException(0)									#Database isn't connected
+
+		#Get table meta information
+		if not meta:
+			meta = self._get_meta_from_index(tableindex)
+
+		#Calculate page indexes
+		pageid = rowid//consts.pagesize
+		tabindx = rowid%consts.pagesize
+
+		#Get byteindex of page and of item
+		pageindx = meta["pagespos"][pageid]
+		readpos = pageindx + tabindx*meta["rowlength"] + 6
+		
+		#Open file
+		with self.__file.open("r+") as file:
+			
+			meta["count"] = meta["count"] - 1
+
+			#Mark for removable
+			file.writeint(2, starts=readpos, cbytes=1)		
+
+			cnt = file.readint(starts=pageindx, cbytes=2)
+			rcnt = file.readint(starts=pageindx+2, cbytes=2)
+
+			file.writeint(cnt-1, starts=pageindx, cbytes=2)					
+			file.writeint(rcnt+1, starts=pageindx+2, cbytes=2)					
+			file.writeint(meta["count"], starts=meta["index"]+28, cbytes=3)	#To meta information about table
+
+
+	def delete_from(self, tablename, expr="1"):
+		
+		#Check for opened table:
+		if not self.__opened:
+			raise exc.DBConnectionException(0)									#Database isn't connected
+
+		#Get table meta information
+		meta = self._get_table_meta(tablename)
+		print("REMOVING", meta)
+
+		cnt = 0																	#Count of removed items
+
+		#Read data
+		for i in range(meta["count"]):
+
+			#Get by one rows
+			s = self._get_one_row(meta["index"], i, meta=meta)
+
+			#Set variables values
+			elements = {
+				meta["fields"][j]: s[j] for j in range(len(meta["fields"]))
+			}
+
+			if where(expr, elements):
+				self._mark_for_removable(meta["index"], i, meta)
+				cnt += 1
+
+		return cnt
+
 
 	def show_create(self, tablename):
 
@@ -700,7 +701,7 @@ class BinaryDataBase:
 
 		query = (
 			"CREATE TABLE `" + meta["name"] + "` (\n" +
-			"\t\t\t\t\t`" + ', '.join(typearr) + "`\n"
+			"\t\t\t\t\t" + ', '.join(typearr) + "\n"
 			"\t\t\t\t" + ");"
 		)
 
