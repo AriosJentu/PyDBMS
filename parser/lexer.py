@@ -6,7 +6,7 @@ import re
 
 tokens = (
 
-	'CREATE', 'SHOW', 'SELECT', 'INSERT', 'FROM','TABLE','NAME', 'RPAREN', 'LPAREN', 'COMMA','VAR', 'int', 'str', 'bol'
+	'CREATE', 'SHOW', 'SELECT', 'INSERT', 'FROM', 'INTO', 'TABLE','NAME', 'VALUES','RPAREN', 'LPAREN', 'COMMA','VAR', 'int', 'str', 'bol'
 
 )
 	
@@ -19,6 +19,8 @@ t_INSERT = r'INSERT'
 
 t_TABLE = r'TABLE'
 t_FROM = r'FROM'
+t_INTO = r'INTO'
+t_VALUES = r'VALUES'
 
 t_RPAREN = r'\)'
 t_LPAREN = r'\('
@@ -45,6 +47,12 @@ def t_NAME(t):
   
     if (t.value.upper() == 'FROM'):
         t.type = 'FROM'
+
+    if (t.value.upper() == 'INTO'):
+        t.type = 'INTO'
+
+    if (t.value.upper() == 'VALUES'):
+        t.type = 'VALUES'
 
     if (t.value.lower() == 'int'):
         t.type = 'int'
