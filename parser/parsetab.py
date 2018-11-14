@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = 'COMMA CREATE LPAREN NAME RPAREN SHOW TABLE VAR char intstart : CREATE bodybody : NAME'
+_lr_signature = 'COMMA CREATE LPAREN NAME RPAREN SHOW TABLE VAR bol int strstart : create\n             | showcreate : CREATE create_bodyshow : SHOW CREATE TABLE NAMEcreate_body : TABLE NAME LPAREN values RPARENvalues : var \n              | values COMMA varvar : NAME typetype : int \n            | str\n            | bol'
     
-_lr_action_items = {'CREATE':([0,],[2,]),'$end':([1,3,4,],[0,-1,-2,]),'NAME':([2,],[4,]),}
+_lr_action_items = {'CREATE':([0,5,],[4,8,]),'SHOW':([0,],[5,]),'$end':([1,2,3,6,12,20,],[0,-1,-2,-3,-4,-5,]),'TABLE':([4,8,],[7,10,]),'NAME':([7,10,11,21,],[9,12,13,13,]),'LPAREN':([9,],[11,]),'int':([13,],[17,]),'str':([13,],[18,]),'bol':([13,],[19,]),'RPAREN':([14,15,16,17,18,19,22,],[20,-6,-8,-9,-10,-11,-7,]),'COMMA':([14,15,16,17,18,19,22,],[21,-6,-8,-9,-10,-11,-7,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'start':([0,],[1,]),'body':([2,],[3,]),}
+_lr_goto_items = {'start':([0,],[1,]),'create':([0,],[2,]),'show':([0,],[3,]),'create_body':([4,],[6,]),'values':([11,],[14,]),'var':([11,21,],[15,22,]),'type':([13,],[16,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -27,6 +27,15 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> start","S'",1,None,None,None),
-  ('start -> CREATE body','start',2,'p_start','pars.py',24),
-  ('body -> NAME','body',1,'p_body','pars.py',32),
+  ('start -> create','start',1,'p_start','pars.py',24),
+  ('start -> show','start',1,'p_start','pars.py',25),
+  ('create -> CREATE create_body','create',2,'p_create','pars.py',30),
+  ('show -> SHOW CREATE TABLE NAME','show',4,'p_show','pars.py',36),
+  ('create_body -> TABLE NAME LPAREN values RPAREN','create_body',5,'p_create_body','pars.py',47),
+  ('values -> var','values',1,'p_values','pars.py',55),
+  ('values -> values COMMA var','values',3,'p_values','pars.py',56),
+  ('var -> NAME type','var',2,'p_var','pars.py',65),
+  ('type -> int','type',1,'p_type','pars.py',71),
+  ('type -> str','type',1,'p_type','pars.py',72),
+  ('type -> bol','type',1,'p_type','pars.py',73),
 ]

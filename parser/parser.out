@@ -2,50 +2,64 @@ Created by PLY version 3.11 (http://www.dabeaz.com/ply)
 
 Unused terminals:
 
-    COMMA
-    LPAREN
-    RPAREN
-    SHOW
-    TABLE
     VAR
-    char
-    int
 
 Grammar
 
 Rule 0     S' -> start
-Rule 1     start -> CREATE body
-Rule 2     body -> NAME
+Rule 1     start -> create
+Rule 2     start -> show
+Rule 3     create -> CREATE create_body
+Rule 4     show -> SHOW CREATE TABLE NAME
+Rule 5     create_body -> TABLE NAME LPAREN values RPAREN
+Rule 6     values -> var
+Rule 7     values -> values COMMA var
+Rule 8     var -> NAME type
+Rule 9     type -> int
+Rule 10    type -> str
+Rule 11    type -> bol
 
 Terminals, with rules where they appear
 
-COMMA                : 
-CREATE               : 1
-LPAREN               : 
-NAME                 : 2
-RPAREN               : 
-SHOW                 : 
-TABLE                : 
+COMMA                : 7
+CREATE               : 3 4
+LPAREN               : 5
+NAME                 : 4 5 8
+RPAREN               : 5
+SHOW                 : 4
+TABLE                : 4 5
 VAR                  : 
-char                 : 
+bol                  : 11
 error                : 
-int                  : 
+int                  : 9
+str                  : 10
 
 Nonterminals, with rules where they appear
 
-body                 : 1
+create               : 1
+create_body          : 3
+show                 : 2
 start                : 0
+type                 : 8
+values               : 5 7
+var                  : 6 7
 
 Parsing method: LALR
 
 state 0
 
     (0) S' -> . start
-    (1) start -> . CREATE body
+    (1) start -> . create
+    (2) start -> . show
+    (3) create -> . CREATE create_body
+    (4) show -> . SHOW CREATE TABLE NAME
 
-    CREATE          shift and go to state 2
+    CREATE          shift and go to state 4
+    SHOW            shift and go to state 5
 
     start                          shift and go to state 1
+    create                         shift and go to state 2
+    show                           shift and go to state 3
 
 state 1
 
@@ -55,23 +69,170 @@ state 1
 
 state 2
 
-    (1) start -> CREATE . body
-    (2) body -> . NAME
+    (1) start -> create .
 
-    NAME            shift and go to state 4
+    $end            reduce using rule 1 (start -> create .)
 
-    body                           shift and go to state 3
 
 state 3
 
-    (1) start -> CREATE body .
+    (2) start -> show .
 
-    $end            reduce using rule 1 (start -> CREATE body .)
+    $end            reduce using rule 2 (start -> show .)
 
 
 state 4
 
-    (2) body -> NAME .
+    (3) create -> CREATE . create_body
+    (5) create_body -> . TABLE NAME LPAREN values RPAREN
 
-    $end            reduce using rule 2 (body -> NAME .)
+    TABLE           shift and go to state 7
+
+    create_body                    shift and go to state 6
+
+state 5
+
+    (4) show -> SHOW . CREATE TABLE NAME
+
+    CREATE          shift and go to state 8
+
+
+state 6
+
+    (3) create -> CREATE create_body .
+
+    $end            reduce using rule 3 (create -> CREATE create_body .)
+
+
+state 7
+
+    (5) create_body -> TABLE . NAME LPAREN values RPAREN
+
+    NAME            shift and go to state 9
+
+
+state 8
+
+    (4) show -> SHOW CREATE . TABLE NAME
+
+    TABLE           shift and go to state 10
+
+
+state 9
+
+    (5) create_body -> TABLE NAME . LPAREN values RPAREN
+
+    LPAREN          shift and go to state 11
+
+
+state 10
+
+    (4) show -> SHOW CREATE TABLE . NAME
+
+    NAME            shift and go to state 12
+
+
+state 11
+
+    (5) create_body -> TABLE NAME LPAREN . values RPAREN
+    (6) values -> . var
+    (7) values -> . values COMMA var
+    (8) var -> . NAME type
+
+    NAME            shift and go to state 13
+
+    values                         shift and go to state 14
+    var                            shift and go to state 15
+
+state 12
+
+    (4) show -> SHOW CREATE TABLE NAME .
+
+    $end            reduce using rule 4 (show -> SHOW CREATE TABLE NAME .)
+
+
+state 13
+
+    (8) var -> NAME . type
+    (9) type -> . int
+    (10) type -> . str
+    (11) type -> . bol
+
+    int             shift and go to state 17
+    str             shift and go to state 18
+    bol             shift and go to state 19
+
+    type                           shift and go to state 16
+
+state 14
+
+    (5) create_body -> TABLE NAME LPAREN values . RPAREN
+    (7) values -> values . COMMA var
+
+    RPAREN          shift and go to state 20
+    COMMA           shift and go to state 21
+
+
+state 15
+
+    (6) values -> var .
+
+    RPAREN          reduce using rule 6 (values -> var .)
+    COMMA           reduce using rule 6 (values -> var .)
+
+
+state 16
+
+    (8) var -> NAME type .
+
+    RPAREN          reduce using rule 8 (var -> NAME type .)
+    COMMA           reduce using rule 8 (var -> NAME type .)
+
+
+state 17
+
+    (9) type -> int .
+
+    RPAREN          reduce using rule 9 (type -> int .)
+    COMMA           reduce using rule 9 (type -> int .)
+
+
+state 18
+
+    (10) type -> str .
+
+    RPAREN          reduce using rule 10 (type -> str .)
+    COMMA           reduce using rule 10 (type -> str .)
+
+
+state 19
+
+    (11) type -> bol .
+
+    RPAREN          reduce using rule 11 (type -> bol .)
+    COMMA           reduce using rule 11 (type -> bol .)
+
+
+state 20
+
+    (5) create_body -> TABLE NAME LPAREN values RPAREN .
+
+    $end            reduce using rule 5 (create_body -> TABLE NAME LPAREN values RPAREN .)
+
+
+state 21
+
+    (7) values -> values COMMA . var
+    (8) var -> . NAME type
+
+    NAME            shift and go to state 13
+
+    var                            shift and go to state 22
+
+state 22
+
+    (7) values -> values COMMA var .
+
+    RPAREN          reduce using rule 7 (values -> values COMMA var .)
+    COMMA           reduce using rule 7 (values -> values COMMA var .)
 
