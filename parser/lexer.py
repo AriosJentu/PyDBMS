@@ -6,7 +6,7 @@ import re
 
 tokens = (
 
-	'CREATE', 'SHOW', 'SELECT', 'FROM','TABLE','NAME', 'RPAREN', 'LPAREN', 'COMMA','VAR', 'int', 'str', 'bol'
+	'CREATE', 'SHOW', 'SELECT', 'INSERT', 'FROM','TABLE','NAME', 'RPAREN', 'LPAREN', 'COMMA','VAR', 'int', 'str', 'bol'
 
 )
 	
@@ -15,6 +15,7 @@ ident = r'[a-zA-Z_][a-zA-Z0-9_]\w*'
 t_CREATE = r'CREATE'
 t_SHOW = r'SHOW'
 t_SELECT = r'SELECT'
+t_INSERT = r'INSERT'
 
 t_TABLE = r'TABLE'
 t_FROM = r'FROM'
@@ -35,6 +36,9 @@ def t_NAME(t):
 
     if(t.value.upper() == 'SELECT'):
         t.type = 'SELECT'
+
+    if(t.value.upper() == 'INSERT'):
+        t.type = 'INSERT'
 
     if (t.value.upper() == 'TABLE'):
         t.type = 'TABLE'
