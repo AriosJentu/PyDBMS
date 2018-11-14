@@ -59,7 +59,7 @@ for i in database.select_from("kekos", ["*"], "len(Lalka) < 14 or Palka%2 == 0")
 	print("\t", i)
 
 print("\nQuery:")
-for i in database.select_from("kekos", ["*"], "len(Lalka) < 14"):
+for i in database.select_from("kekos", ["Palka"], "len(Lalka) < 14"):
 	print("\t", i)
 
 print("\nQuery:")

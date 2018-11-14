@@ -460,8 +460,8 @@ class BinaryDataBase:
 					pagepos = i 												#Set page
 					pagemeta = self._get_page_meta(pagepos, opened=file)
 
-					rcount = file.readint(starts=pagepos, cbytes=2)				#Read count of elements on page
-					count = rcount + file.readint(starts=pagepos+2, cbytes=2)
+					rcount = pagemeta["count"]									#Read count of elements on page
+					count = pagemeta["filled"]
 
 					#Check for count
 					if count < consts.pagesize:
@@ -593,12 +593,14 @@ class BinaryDataBase:
 		#Get table meta information
 		meta = self._get_table_meta(tablename)
 
+		sfields = meta["fields"]
 		#If select all, set fields index
 		if "*" in fields:
 			fields = meta["fields"]
 
 		#Get indexes
 		indexes = self._calc_indexes(meta["index"], fields)
+		sindexes = self._calc_indexes(meta["index"], sfields)
 
 		#Result array of select
 		results = []
@@ -608,10 +610,11 @@ class BinaryDataBase:
 
 			#Get by one rows
 			s = self._get_one_row(meta["index"], i, indexes, meta)
+			f = self._get_one_row(meta["index"], i, sindexes, meta)
 
 			if s:
 				#Set variables values
-				elements = {fields[i]: s[i] for i in range(len(fields))}
+				elements = {sfields[i]: f[i] for i in range(len(sfields))}
 				
 				#Check for "where" expression				
 				if where(expr, elements):
