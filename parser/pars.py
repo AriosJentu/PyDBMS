@@ -57,8 +57,8 @@ def p_create_body(p):
     p[0] = p[0].add_parts([p[4]])
 
 def p_select_body(p):
-    '''select_body : values FROM NAME
-                   | LPAREN values RPAREN FROM NAME'''
+    '''select_body : columns FROM NAME
+                   | LPAREN columns RPAREN FROM NAME'''
 
     p[0] = Node('TABLE', [])
     if len(p) == 4:
@@ -79,17 +79,28 @@ def p_values(p):
     else:
         p[0] = p[1].add_parts([p[3]])
 
-#use for tables names and names of variables
+
 def p_var(p):
-    '''var : NAME
-           | NAME type'''
+    '''var : NAME type'''
 
     p[0] = Node('var', [])
     p[0] = p[0].add_parts([p[1]])
+    p[0] = p[0].add_parts([p[2]])
 
-    #for vars types
-    if(len(p) == 3):
-        p[0] = p[0].add_parts([p[2]])
+def p_columns(p):
+    '''columns : column_name
+               | columns COMMA column_name'''
+
+    if len(p) == 2:
+        p[0] = Node('columns', [p[1]])
+    else:
+        p[0] = p[1].add_parts([p[3]])
+
+def p_column_name(p):
+    '''column_name : NAME'''
+
+    p[0] = Node('column_name', [])
+    p[0] = p[0].add_parts([p[1]])    
 
 def p_type(p):
     '''type : int 

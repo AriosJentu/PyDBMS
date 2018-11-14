@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = 'COMMA CREATE FROM LPAREN NAME RPAREN SELECT SHOW TABLE VAR bol int strstart : create\n             | show\n             | selectcreate : CREATE create_bodyshow : SHOW CREATE TABLE NAMEselect : SELECT select_bodycreate_body : TABLE NAME LPAREN values RPARENselect_body : values FROM NAME\n                   | LPAREN values RPAREN FROM NAMEvalues : var \n              | values COMMA varvar : NAME\n           | NAME typetype : int \n            | str\n            | bol'
+_lr_signature = 'COMMA CREATE FROM LPAREN NAME RPAREN SELECT SHOW TABLE VAR bol int strstart : create\n             | show\n             | selectcreate : CREATE create_bodyshow : SHOW CREATE TABLE NAMEselect : SELECT select_bodycreate_body : TABLE NAME LPAREN values RPARENselect_body : columns FROM NAME\n                   | LPAREN columns RPAREN FROM NAMEvalues : var \n              | values COMMA varvar : NAME typecolumns : column_name\n               | columns COMMA column_namecolumn_name : NAMEtype : int \n            | str\n            | bol'
     
-_lr_action_items = {'CREATE':([0,6,],[5,10,]),'SHOW':([0,],[6,]),'SELECT':([0,],[7,]),'$end':([1,2,3,4,8,11,26,27,32,33,],[0,-1,-2,-3,-4,-6,-5,-8,-7,-9,]),'TABLE':([5,10,],[9,17,]),'LPAREN':([7,16,],[14,25,]),'NAME':([7,9,14,17,18,19,25,31,],[13,16,13,26,27,13,13,33,]),'FROM':([12,13,15,20,21,22,23,28,29,],[18,-12,-10,-13,-14,-15,-16,-11,31,]),'COMMA':([12,13,15,20,21,22,23,24,28,30,],[19,-12,-10,-13,-14,-15,-16,19,-11,19,]),'RPAREN':([13,15,20,21,22,23,24,28,30,],[-12,-10,-13,-14,-15,-16,29,-11,32,]),'int':([13,],[21,]),'str':([13,],[22,]),'bol':([13,],[23,]),}
+_lr_action_items = {'CREATE':([0,6,],[5,10,]),'SHOW':([0,],[6,]),'SELECT':([0,],[7,]),'$end':([1,2,3,4,8,11,22,23,34,36,],[0,-1,-2,-3,-4,-6,-5,-8,-7,-9,]),'TABLE':([5,10,],[9,17,]),'LPAREN':([7,16,],[14,21,]),'NAME':([7,9,14,17,18,19,21,29,35,],[13,16,13,22,23,13,26,36,26,]),'FROM':([12,13,15,24,25,],[18,-15,-13,-14,29,]),'COMMA':([12,13,15,20,24,27,28,30,31,32,33,37,],[19,-15,-13,19,-14,35,-10,-12,-16,-17,-18,-11,]),'RPAREN':([13,15,20,24,27,28,30,31,32,33,37,],[-15,-13,25,-14,34,-10,-12,-16,-17,-18,-11,]),'int':([26,],[31,]),'str':([26,],[32,]),'bol':([26,],[33,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'start':([0,],[1,]),'create':([0,],[2,]),'show':([0,],[3,]),'select':([0,],[4,]),'create_body':([5,],[8,]),'select_body':([7,],[11,]),'values':([7,14,25,],[12,24,30,]),'var':([7,14,19,25,],[15,15,28,15,]),'type':([13,],[20,]),}
+_lr_goto_items = {'start':([0,],[1,]),'create':([0,],[2,]),'show':([0,],[3,]),'select':([0,],[4,]),'create_body':([5,],[8,]),'select_body':([7,],[11,]),'columns':([7,14,],[12,20,]),'column_name':([7,14,19,],[15,15,24,]),'values':([21,],[27,]),'var':([21,35,],[28,37,]),'type':([26,],[30,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -34,13 +34,15 @@ _lr_productions = [
   ('show -> SHOW CREATE TABLE NAME','show',4,'p_show','pars.py',37),
   ('select -> SELECT select_body','select',2,'p_select','pars.py',46),
   ('create_body -> TABLE NAME LPAREN values RPAREN','create_body',5,'p_create_body','pars.py',53),
-  ('select_body -> values FROM NAME','select_body',3,'p_select_body','pars.py',60),
-  ('select_body -> LPAREN values RPAREN FROM NAME','select_body',5,'p_select_body','pars.py',61),
-  ('values -> var','values',1,'p_values','pars.py',72),
-  ('values -> values COMMA var','values',3,'p_values','pars.py',73),
-  ('var -> NAME','var',1,'p_var','pars.py',81),
-  ('var -> NAME type','var',2,'p_var','pars.py',82),
-  ('type -> int','type',1,'p_type','pars.py',91),
-  ('type -> str','type',1,'p_type','pars.py',92),
-  ('type -> bol','type',1,'p_type','pars.py',93),
+  ('select_body -> columns FROM NAME','select_body',3,'p_select_body','pars.py',60),
+  ('select_body -> LPAREN columns RPAREN FROM NAME','select_body',5,'p_select_body','pars.py',61),
+  ('values -> var','values',1,'p_values','pars.py',74),
+  ('values -> values COMMA var','values',3,'p_values','pars.py',75),
+  ('var -> NAME type','var',2,'p_var','pars.py',84),
+  ('columns -> column_name','columns',1,'p_columns','pars.py',91),
+  ('columns -> columns COMMA column_name','columns',3,'p_columns','pars.py',92),
+  ('column_name -> NAME','column_name',1,'p_column_name','pars.py',100),
+  ('type -> int','type',1,'p_type','pars.py',106),
+  ('type -> str','type',1,'p_type','pars.py',107),
+  ('type -> bol','type',1,'p_type','pars.py',108),
 ]
