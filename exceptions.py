@@ -18,9 +18,10 @@ class DBException(Exception):
 		9:	"Too much Table's Fields.",
 		10:	"Count of pages for table '{}' too much.",
 		11:	DoesntExist.format("Field Type", "{}"),
-		12:	"Incorrect values count for INSERT: Need '{}', Got: '{}'.",
+		12:	"Incorrect values count for {}: Need '{}', Got: '{}'.",
 		13:	"Value with index '{}' need to be '{}', but got '{}'.",
 		14:	"Data Base already connected.",
+		15:	"Count of values and fields are different.",
 	}
 	
 	def __init__(self, message, *args):
@@ -54,5 +55,5 @@ class DBPageException(DBException):
 
 class DBValueException(DBException):
 	def __init__(self, i, *args):
-		indexes = [8, 12, 13]
+		indexes = [8, 12, 13, 15]
 		super().__init__(indexes[i], *args)
