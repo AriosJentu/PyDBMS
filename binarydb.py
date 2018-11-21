@@ -155,9 +155,18 @@ print()
 print(classes.Types.int)
 """
 
+db.Hello.delete("id < 2")
 x = db.select_from("Hello", ["Keks", "Test", "__rowid__"], "1")
 print(x)
-y = db.Hello.select(["Keks"], "__rowid__ > 0")
+print()
+
+y = db.Hello.select(["*"], "__rowid__ > 2")
+print(y)
+
+print()
+print("Removed:")
+for i in db.Hello.get_rows(True):
+	print(i)
 
 #db.__test__.create_page()
 

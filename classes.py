@@ -257,6 +257,9 @@ class TableMeta(Struct):
 
 	def _get_valid_fields(self, fields=[]):
 		vals = []
+		if "*" in fields:
+			return self.fields
+
 		for i in fields:
 			if i in self.fields or i == "__rowid__":
 				vals.append(i)
@@ -354,9 +357,11 @@ class TableMeta(Struct):
 			r_row = Row(self.firstrmvd)
 			r_row.tblmeta = self
 			r_row._read_indexes()
+			r_row.next = 0
+			r_row._write_indexes()
 
 			pos = self.firstrmvd
-			self.firstrmvd = r_row.next
+			self.firstrmvd = r_row.previous
 
 		else:
 
@@ -377,6 +382,7 @@ class TableMeta(Struct):
 		row.tblmeta = self
 		row.id = self.count
 		row.available = 1
+		row.next = 0
 		row.previous = self.lastelmnt
 		row.values = Struct({v:values[i] for i, v in enumerate(fields)})
 		row._write_to_file()
@@ -398,6 +404,35 @@ class TableMeta(Struct):
 				selects.append(i)
 
 		return selects
+
+	def delete(self, expr="1"):
+
+		index = self.firstelmnt
+
+		while index != 0:
+
+			cur_row = Row(index)
+			cur_row.tblmeta = self
+			cur_row._read_from_file()
+			saved = index
+			index = cur_row.next
+
+			if where(expr, cur_row.values):
+				
+				#Inverse: next means previous, and previous means next! (Reading/writing backward)
+				
+				if saved == self.firstelmnt:
+					self.firstelmnt = cur_row.next
+
+				cur_row._drop_row()
+				cur_row.available = 2
+				cur_row.previous = 0
+				cur_row.next = self.firstrmvd
+				cur_row._write_indexes()
+				
+				self.firstrmvd = saved
+				self._update_pages()
+
 
 	def _get_write_position(self):
 
@@ -538,6 +573,25 @@ class Row(Struct):
 		self.next = 0
 		self.values = Struct()
 		self.values.id = self.id
+
+	def _drop_row(self):
+
+		if self.previous:
+
+			prev = Row(self.previous)
+			prev.tblmeta = self.tblmeta
+			prev._read_indexes()
+			prev.next = self.next
+			prev._write_indexes()
+
+		if self.next:
+
+			rnxt = Row(self.next)
+			rnxt.tblmeta = self.tblmeta
+			rnxt._read_indexes()
+			rnxt.previous = self.previous
+			rnxt._write_indexes()
+
 
 	def _select_by_fields(self, fields=[]):
 
