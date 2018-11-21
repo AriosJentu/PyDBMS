@@ -30,30 +30,56 @@ class DBException(Exception):
 		if type(message) == int and 0 <= message < len(ex):
 			super().__init__(ex[message].format(*args))
 		else:
-			super().__init__(message)
+			super().__init__(message.format(*args))
 
 
 class DBConnectionException(DBException):
 	def __init__(self, i, *args):
-		indexes = [6, 14]
+		
+		indexes = [
+			"Data Base isn't connected.",
+			"Data Base already connected.",
+		]
+		
 		super().__init__(indexes[i], *args)
 
 class DBFileException(DBException):
 	def __init__(self, i, *args):
-		indexes = [1, 2, 7, 5]
+		indexes = [
+			DBException.Exist.format("File", "{}"),
+			DBException.DoesntExist.format("File", "{}"),
+			"Already too much tables inside.",
+			"Wrong Data Base Signature.",
+		]
 		super().__init__(indexes[i], *args)
 
 class DBTableException(DBException):
 	def __init__(self, i, *args):
-		indexes = [3, 4, 9, 11]
+		
+		indexes = [
+			DBException.Exist.format("Table", "{}"),
+			DBException.DoesntExist.format("Table", "{}"),
+			"Too much Table's Fields.",
+			DBException.DoesntExist.format("Field Type", "{}"),
+		]
+
 		super().__init__(indexes[i], *args)
 
 class DBPageException(DBException):
 	def __init__(self, i, *args):
-		indexes = [10]
+		indexes = [
+			"Count of pages for table '{}' too much.",
+		]
 		super().__init__(indexes[i], *args)
 
 class DBValueException(DBException):
 	def __init__(self, i, *args):
-		indexes = [8, 12, 13, 15]
+
+		indexes = [
+			"Count of fields and count of types are different.",
+			"Incorrect values count for {}: Need '{}', Got: '{}'.",
+			"Value with index '{}' need to be '{}', but got '{}'.",
+			"Count of values and fields are different.",
+		]
+
 		super().__init__(indexes[i], *args)
