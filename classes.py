@@ -64,6 +64,9 @@ class Select(Struct):
 	def append(self, row):
 		self.values.append(row)
 
+	def count(self):
+		return len(self.values)
+
 	def __repr__(self):
 		return "<Select Rows> {\n\tfields: " + (
 			str(self.fields)
@@ -81,9 +84,12 @@ class Type(Struct):
 		self.type = ctype
 		self.fname = fullname
 
-	def __str__(self):
+	def __repr__(self):
 		return "<Type " + self.fname+" [" + self.name + "] : " + (
 			str(self.size) + " bytes>")
+
+	def __str__(self):
+		return self.name
 
 Types = Struct({
 	"int": Type("int", consts.intsize, int, "integer"),
@@ -94,6 +100,9 @@ Types = Struct({
 Types.integer = Types.int
 Types.bool = Types.bol
 Types.string = Types.str
+Types[int] = Types.int
+Types[bool] = Types.bool
+Types[str] = Types.str
 
 class DataBaseMeta(Struct):
 
@@ -253,6 +262,15 @@ class TableMeta(Struct):
 	def _fill_fields(self, fdict={}):
 		self.fields = list(fdict.keys())
 		self.types = list(fdict.values())
+		
+		for i, v in enumerate(self.types):
+			if v in Types:
+				self.types[i] = Types[v]
+			elif type(v) == Type:
+				self.types[i] = v
+			else:
+				self.types[i] = Types.str
+
 		self.fcount = len(self.fields)
 
 	def _get_valid_fields(self, fields=[]):

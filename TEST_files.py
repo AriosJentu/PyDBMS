@@ -1,96 +1,49 @@
 import pytest
-import bindb
+import binarydb
 import exceptions as exc
 
-database = bindb.BinaryDataBase("testdbss.jpdb")
-unexistdatabase = bindb.BinaryDataBase("testdbsss.jpdb")
-
+database = binarydb.DataBase("testdbss.jpdb")
+unexistdatabase = binarydb.DataBase("testdbsssss.jpdb")
 database.create()
 
 def test_connect_error():
 	with pytest.raises(exc.DBConnectionException):
-		database.connect()	#Can't connect twice
+		database.connect()
 
-def test_open_error():
 	with pytest.raises(exc.DBFileException):
-		unexistdatabase.connect()	#File doesn't exists
+		unexistdatabase.connect()
 
-def test_create_error():
+def test_create_table_error():
+	database.create_table("Hello", {"Kek": int})
 	with pytest.raises(exc.DBTableException):
-		database.create_table("keks", ["Integer"], ["int"])
-		database.create_table("keks", ["Another", "Other"], ["str", "int"])
+		database.create_table("Hello", {"Kek": int})
 
-def test_count_of_fields():
-	with pytest.raises(exc.DBTableException):
-		database.create_table("keks", ["Another"], ["str", "int"])	
+def test_insert():
+	for i in range(10):
+		database.Hello.insert([i], ["Kek"]) 
+		database.Hello.insert([i+10], ["Kek"]) 
+		
+def test_select():
+
+	select = database.Hello.select(["*"])
+	assert select.count() == 20
+
+	select = database.Hello.select(["*"], "id < 10")
+	assert select.count() == 10
+
+	select = database.Hello.select(["*"], "Kek%10 == 0 or Kek%5 == 1")
+	assert select.count() == 6	#0, 10, 1, 6, 11, 16
+
+def test_delete():
+
+	database.Hello.delete("id >= 10")
+
+	select = database.Hello.select(["*"])
+	assert select.count() == 10
 
 def test_insert_error():
-	with pytest.raises(exc.DBValueException):
-		database.insert_item("keks", ["kek"])	#String, not int
+	with pytest.raises(AttributeError):
+		database.Hello.insert(["Kekos"], ["Kek"]) 
+		database.Hello.insert(["KEKSON"], ["Faaka"]) 
 
-def test_insert_fields_error():
-	with pytest.raises(exc.DBValueException):
-		database.insert_item("keks", [1, 2])	#Too much items
 
-def test_insert_nothing_error():
-	with pytest.raises(exc.DBValueException):
-		database.insert_item("keks", [])	#Too few items
-
-#----------LOCAL TEST
-
-database = bindb.BinaryDataBase("testdb.jpdb")
-database.create()
-database.create_table("kekos", ["Lalka", "Palka", "Galka"], ["str", "int", "bol"])
-database.create_table("keks", ["Integer"], ["int"])
-database.create_page("keks")
-database.create_page("kekos")
-database.create_page("keks")
-
-database.insert_item("kekos", ["Hello World", 12342, True])
-database.insert_item("kekos", ["Use the force, Luke", 4343, False])
-database.insert_item("kekos", ["You underestimate my power!!", 2435478, True])
-
-print("All:")
-for i in database.select_from("kekos", ["*"]):
-	print("\t", i)
-
-print("\nQuery:")
-for i in database.select_from("kekos", ["*"], "len(Lalka) < 14 or Palka%2 == 0"):
-	print("\t", i)
-
-print("\nQuery:")
-for i in database.select_from("kekos", ["Palka"], "len(Lalka) < 14"):
-	print("\t", i)
-
-print("\nQuery:")
-for i in database.select_from("kekos", ["*"], "len(Lalka) > 14 and Palka%2 == 0"):
-	print("\t", i)
-
-print("\nUpdated: ")
-print(database.update("kekos", ["Lalka"], ["KEKOSIK"], "len(Lalka) < 14"))
-print(database.update("kekos", ["Palka", "Galka"], [123, True], "len(Lalka) > 14"))
-print()
-
-print("All:")
-for i in database.select_from("kekos", ["*"]):
-	print("\t", i)
-
-print()
-print(database.select_from("kekos", ["Galka", "Palka"]))
-print(database.select_from("kekos", ["Lalka"]))
-print(database.select_from("kekos", ["Palka"]))
-print(database.select_from("kekos", ["Galka"]))
-
-print("\nRemoved: ")
-print(database.delete_from("kekos", "len(Lalka) > 14"))
-
-print(database.execute("show create table 'kekos'"))
-print(database.execute("select Lalka, Palka from 'kekos'"))
-
-print(database.get_list_of_tablenames())
-for i in database.get_list_of_tablenames():
-	print(database._get_table_meta(i))
-
-print("\nAll:")
-for i in database.select_from("kekos", ["*"]):
-	print("\t", i)

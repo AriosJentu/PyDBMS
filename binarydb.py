@@ -63,10 +63,10 @@ class DataBase(classes.Struct):
 		if not self._BINFILE.is_file_exist():
 			raise exc.DBFileException(1, self._DBNAME)		
 
-		try:
-			self._FILE = self._BINFILE.open("r+")
-		except:
-			raise exc.DBConnectionException(1)		
+		if self._FILE:
+			raise exc.DBConnectionException(1)
+
+		self._FILE = self._BINFILE.open("r+")
 
 
 		#Check for signature
@@ -84,6 +84,7 @@ class DataBase(classes.Struct):
 
 	def close(self):
 		self._FILE.close()
+		self._FILE = False
 
 
 	def create(self):
@@ -108,9 +109,9 @@ class DataBase(classes.Struct):
 
 
 		self.create_table("__test__", {
-			"Test1": classes.Types.integer, 
-			"Test2": classes.Types.string, 
-			"Test3": classes.Types.bool
+			"Test1": int, 
+			"Test2": str, 
+			"Test3": bool
 		})
 
 	def get_tables(self):
@@ -123,29 +124,30 @@ class DataBase(classes.Struct):
 
 		return self[val]
 
-
+"""
 db = DataBase("testdb2.jpdb")
 db.create()
 db.close()
 db.connect()
 
 db.create_table("Hello", {
-	"Test": classes.Types.str,
-	"Keks": classes.Types.int,
+	"Test": str,
+	"Keks": int,
 })
 db.create_table("Hello2", {
-	"Test1": classes.Types.int, 
-	"Test2": classes.Types.str, 
-	"Test3": classes.Types.bol
+	"Test1": int, 
+	"Test2": str, 
+	"Test3": bool
 })
 
-a = db.Hello.insert(["KEKSON"], ["Test"])
-b = db.Hello.insert(["145"], ["Test"])
-c = db.Hello.insert(["HELLO WORLD"], ["Test"])
-d = db.Hello.insert(["Sasai Kudasai", 12], ["Test", "Keks"])
+db.Hello.insert(["KEKSON"], ["Test"])
+db.Hello.insert(["145"], ["Test"])
+db.Hello.insert(["HELLO WORLD"], ["Test"])
+db.Hello.insert(["Sasai Kudasai", 12], ["Test", "Keks"])
 
 db.close()
 db.connect()
+"""
 
 """
 print(db._META.tables["__test__"], db.__test__.fields)
@@ -155,6 +157,7 @@ print()
 print(classes.Types.int)
 """
 
+"""
 db.Hello.delete("id < 2")
 x = db.select_from("Hello", ["Keks", "Test", "__rowid__"], "1")
 print(x)
@@ -168,7 +171,8 @@ print("Removed:")
 for i in db.Hello.get_rows(True):
 	print(i)
 
-#db.__test__.create_page()
+db.__test__.create_page()
+"""
 
 """
 for i in db.__test__.get_pages():
