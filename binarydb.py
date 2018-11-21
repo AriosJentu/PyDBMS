@@ -44,12 +44,12 @@ class DataBase(classes.Struct):
 		return self[tblname].create_page()
 
 
-	def insert_into(self, tblname, values=[], fields=[], where=""):
+	def insert_into(self, tblname, values=[], fields=[]):
 		
 		if tblname not in self:
 			raise exc.DBTableException(1, tblname)
 
-		return self[tblname].insert(values, fields, where)
+		return self[tblname].insert(values, fields)
 
 	def connect(self):
 
@@ -106,6 +106,9 @@ class DataBase(classes.Struct):
 			"Test3": classes.Types.bool
 		})
 
+	def get_tables(self):
+		return self._META.tables
+
 
 	def __getattr__(self, val):
 		if val not in self.__dict__.keys():
@@ -119,21 +122,28 @@ db.create()
 db.close()
 db.connect()
 
-db.create_table("Hello", {"Test": classes.Types.int})
+db.create_table("Hello", {"Test": classes.Types.str})
 db.create_table("Hello2", {
 	"Test1": classes.Types.int, 
 	"Test2": classes.Types.str, 
 	"Test3": classes.Types.bol
 })
+
 db.close()
 db.connect()
 
+a = db.Hello.insert(["144"], ["Test"])
+b = db.Hello.insert(["145"], ["Test"])
 
 print(db._META.tables["__test__"], db.__test__.fields)
 print(db.Hello, db.Hello.fields)
 print(db.Hello2, db.Hello2.fields)
 print()
 print(classes.Types.int)
+
+for i in db.Hello.get_rows():
+	print("::", i.values)
+
 
 db.__test__.create_page()
 

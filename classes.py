@@ -34,6 +34,11 @@ class Struct:
 		for i in self.__dict__.keys():
 			yield i
 
+	def __repr__(self):
+		return "<Struct> {" + (
+			", ".join(["'"+ i + "': " + str(v) for i, v in self.items()])
+		) + "}"
+
 	def keys(self):
 		return self.__dict__.keys()
 
@@ -125,7 +130,7 @@ class DataBaseMeta(Struct):
 #Meta information about table
 class TableMeta(Struct):
 
-	SIZE = 32 + 19 + consts.fieldscount*24
+	SIZE = 32 + 22 + consts.fieldscount*24
 
 	def __init__(self):
 		
@@ -139,6 +144,7 @@ class TableMeta(Struct):
 
 		self.firstpage = 0
 		self.firstelmnt = 0
+		self.lastelmnt = 0
 		self.firstrmvd = 0
 		
 		self.fields = []
@@ -155,10 +161,10 @@ class TableMeta(Struct):
 
 		file.writestr(self.name, starts=stpos, cbytes=32)
 		self._update_pages()
-		file.writeint(self.rowlen, starts=stpos+32+15, cbytes=2)
-		file.writeint(self.fcount, starts=stpos+32+17, cbytes=2)
+		file.writeint(self.rowlen, starts=stpos+32+18, cbytes=2)
+		file.writeint(self.fcount, starts=stpos+32+20, cbytes=2)
 
-		stpos += 32 + 19
+		stpos += 32 + 22
 		for i, v in enumerate(self.fields):
 			file.writestr(v+self.types[i].name, starts=stpos, cbytes=24)
 			stpos += 24
@@ -176,7 +182,8 @@ class TableMeta(Struct):
 		file.writeint(self.rmvdcnt, starts=stpos+32+3, cbytes=3)
 		file.writeint(self.firstpage, starts=stpos+32+6, cbytes=3)
 		file.writeint(self.firstelmnt, starts=stpos+32+9, cbytes=3)
-		file.writeint(self.firstrmvd, starts=stpos+32+12, cbytes=3)
+		file.writeint(self.lastelmnt, starts=stpos+32+12, cbytes=3)
+		file.writeint(self.firstrmvd, starts=stpos+32+15, cbytes=3)
 
 
 	def _read_from_file(self):
@@ -189,11 +196,12 @@ class TableMeta(Struct):
 		self.rmvdcnt = file.readint(starts=stpos+32+3, cbytes=3)
 		self.firstpage = file.readint(starts=stpos+32+6, cbytes=3)
 		self.firstelmnt = file.readint(starts=stpos+32+9, cbytes=3)
-		self.firstrmvd = file.readint(starts=stpos+32+12, cbytes=3)
-		self.rowlen = file.readint(starts=stpos+32+15, cbytes=2)
-		self.fcount = file.readint(starts=stpos+32+17, cbytes=2)
+		self.lastelmnt = file.readint(starts=stpos+32+12, cbytes=3)
+		self.firstrmvd = file.readint(starts=stpos+32+15, cbytes=3)
+		self.rowlen = file.readint(starts=stpos+32+18, cbytes=2)
+		self.fcount = file.readint(starts=stpos+32+20, cbytes=2)
 
-		stpos += 32 + 19
+		stpos += 32 + 22
 		pos = 4
 		for i in range(self.fcount):
 			field = file.readstr(starts=stpos+i*24, cbytes=21)
@@ -248,7 +256,6 @@ class TableMeta(Struct):
 		page = TablePage(index)
 		page.previous = previndex
 		page.tblmeta = self
-		page.file = file
 		page._write_to_file()
 
 		return page
@@ -261,7 +268,6 @@ class TableMeta(Struct):
 
 		while index != 0:
 			page = TablePage(index)
-			page.file = self.file
 			page.tblmeta = self
 			page._read_from_file()
 			index = page.next
@@ -276,7 +282,6 @@ class TableMeta(Struct):
 		while index != 0:
 			
 			page = TablePage(index)
-			page.file = self.file
 			page.tblmeta = self
 			page._read_from_file()
 			index = page.next
@@ -284,16 +289,69 @@ class TableMeta(Struct):
 			yield page
 
 
-	def get_removed(self):
-		pass
+	def irows(self, removed=False):
+
+		#Returning almost unreaded rows (only indexes)
+		if removed:
+			index = self.firstrmvd
+		else:
+			index = self.firstelmnt
+	
+		while index != 0:
+
+			row = Row(index)
+			row.tblmeta = self
+			row._read_indexes()
+			index = row.next
+
+			yield row
+
+	def get_rows(self, removed=False):
+
+		rows = []
+		for i in self.irows(removed):
+			i._read_from_file()
+			rows.append(i)
+
+		return rows
 
 
-	def insert(self, values=[], fields=[], where=""):
+	def insert(self, values=[], fields=[]):
 
-		pos, page = self._get_write_position()
-		page.count += 1
-		page._update_to_file()
+		if self.firstrmvd:
+			
+			r_row = Row(self.firstrmvd)
+			r_row.tblmeta = self
+			r_row._read_indexes()
 
+			pos = self.firstrmvd
+			self.firstrmvd = r_row.next
+
+		else:
+
+			pos, page = self._get_write_position()
+			page.count += 1
+			page._update_to_file()
+		
+		if not self.firstelmnt:
+			self.firstelmnt = pos
+		else:
+			prevrow = Row(self.lastelmnt)
+			prevrow.tblmeta = self
+			prevrow._read_indexes()
+			prevrow.next = pos
+			prevrow._write_indexes()
+
+		row = Row(pos)
+		row.tblmeta = self
+		row.id = self.count
+		row.previous = self.lastelmnt
+		row.values = Struct({v:values[i] for i, v in enumerate(fields)})
+		row._write_to_file()
+
+		self.count += 1
+		self.lastelmnt = pos
+		self._update_pages()
 
 
 
@@ -310,6 +368,7 @@ class TableMeta(Struct):
 			page = self.create_page()
 			return (page._get_write_position(), page)
 
+
 	def info(self):
 
 		fields = [
@@ -325,15 +384,16 @@ class TableMeta(Struct):
 		n = "\nName:\t\t\t\t{}".format(self.name)
 		i = "\nIndex:\t\t\t\t{}".format(self.index)
 		cnt = "\nCount:\t\t\t\t{}".format(self.count)
-		fpage = "\nFirst page at:\t\t{}".format(self.firstpage)
+		fp = "\nFirst page at:\t\t{}".format(self.firstpage)
 		fel = "\nFirst element at:\t{}".format(self.firstelmnt)
-		frem = "\nFirst removed at:\t{}".format(self.firstrmvd)
-		rlen = "\nRow Length:\t\t\t{}".format(self.rowlen)
-		fldc = "\nFields count:\t\t{}".format(self.fcount)
-		flds = "\nFields:\t\t\t\t["+", ".join(fields)+"]"
-		poz = "\nPositions:\t\t\t["+ ", ".join(poses) + "]"
+		lel = "\nLast element at:\t{}".format(self.lastelmnt)
+		fr = "\nFirst removed at:\t{}".format(self.firstrmvd)
+		rl = "\nRow Length:\t\t\t{}".format(self.rowlen)
+		fc = "\nFields count:\t\t{}".format(self.fcount)
+		fl = "\nFields:\t\t\t\t["+", ".join(fields)+"]"
+		p = "\nPositions:\t\t\t["+ ", ".join(poses) + "]"
 
-		return inf + n + i + cnt + fpage + fel + frem + rlen + fldc + flds + poz
+		return inf + n + i + cnt + fp + fel + lel + fr + rl + fc + fl + p
 
 	def __str__(self):
 
@@ -342,6 +402,7 @@ class TableMeta(Struct):
 			", count: " + str(self.count) + \
 			", first_page: " + str(self.firstpage) + \
 			", first_element: " + str(self.firstelmnt) + \
+			", last_element: " + str(self.lastelmnt) + \
 			", first_removed: " + str(self.firstrmvd) + \
 			", row_length: " + str(self.rowlen) + \
 			", fields_count: " + str(self.fcount) + \
@@ -358,12 +419,11 @@ class TablePage(Struct):
 		self.previous = 0
 		self.next = 0
 		self.count = 0
-		self.file = False
 
 	def _write_to_file(self):
 
 		stpos = self.index
-		file = self.file
+		file = self.tblmeta.file
 
 		self._update_to_file()
 		
@@ -373,7 +433,7 @@ class TablePage(Struct):
 	def _update_to_file(self):
 
 		stpos = self.index
-		file = self.file
+		file = self.tblmeta.file
 		
 		file.writeint(self.tblmeta.index, starts=stpos, cbytes=3)
 		file.writeint(self.count, starts=stpos+3, cbytes=3)
@@ -383,7 +443,7 @@ class TablePage(Struct):
 	def _read_from_file(self):
 
 		stpos = self.index
-		file = self.file
+		file = self.tblmeta.file
 
 		self.count = file.readint(starts=stpos+3, cbytes=3)
 		self.previous = file.readint(starts=stpos+6, cbytes=3)
@@ -422,11 +482,10 @@ class TablePage(Struct):
 #Meta information about Row
 class Row(Struct):
 
-	def __init__(self):
+	def __init__(self, index=0):
 
-		self.index = 0
+		self.index = index
 		self.tblmeta = False
-		self.file = False
 
 		self.available = 0
 		self.id = 0
@@ -434,20 +493,20 @@ class Row(Struct):
 		self.previous = 0
 		self.next = 0
 		self.values = Struct()
+		self.values.id = self.id
 
 	def _write_to_file(self):
 
 		stpos = self.index
-		file = self.file
-		size = self.tblmeta.rowsize
+		file = self.tblmeta.file
 
-		file.writeint(self.available, starts=stpos, cbytes=1)
-		file.writeint(self.id, starts=stpos+1, cbytes=3)
+		self._write_indexes()
 
 		for i in self.values:
 
 			index = self.tblmeta.fields.index(i)
-			otype = self.tblmeta.types[index].name
+			otype = self.tblmeta.types[index]
+			v = self.tblmeta.positions[i]
 
 			file.writetype(
 				otype.name,
@@ -456,23 +515,19 @@ class Row(Struct):
 				cbytes=otype.size
 			)
 
-		file.writeint(self.previous, starts=size-6, cbytes=3)
-		file.writeint(self.next, starts=size-3, cbytes=3)
-
-
 	def _read_from_file(self):
 
 		stpos = self.index
-		file = self.file
-		size = self.tblmeta.rowsize
+		file = self.tblmeta.file
 
-		self.available = file.readint(starts=stpos, cbytes=1)
-		self.id = file.readint(starts=stpos+1, cbytes=3)
-
+		self._read_indexes()
 		for i, v in self.tblmeta.positions.items():
 
+			if i not in self.tblmeta.fields:
+				continue
+
 			index = self.tblmeta.fields.index(i)
-			otype = self.tblmeta.types[index].name
+			otype = self.tblmeta.types[index]
 
 			self.values[i] = file.readtype(
 				otype.name,
@@ -480,9 +535,48 @@ class Row(Struct):
 				cbytes=otype.size
 			)
 
+
+
+	def _read_indexes(self):
+
+		stpos = self.index
+		file = self.tblmeta.file
+		size = stpos+self.tblmeta.rowlen
+
+		self.available = file.readint(starts=stpos, cbytes=1)
+		self.id = file.readint(starts=stpos+1, cbytes=3)
 		self.previous = file.readint(starts=size-6, cbytes=3)
 		self.next = file.readint(starts=size-3, cbytes=3)
+		self.values.id = self.id
 
+	def _write_indexes(self):
 
+		stpos = self.index
+		file = self.tblmeta.file
+		size = stpos+self.tblmeta.rowlen
 
+		file.writeint(self.available, starts=stpos, cbytes=1)
+		file.writeint(self.id, starts=stpos+1, cbytes=3)
+		file.writeint(self.previous, starts=size-6, cbytes=3)
+		file.writeint(self.next, starts=size-3, cbytes=3)
 
+	def info(self):
+
+		info = "\nROW'S META INFORMATION:"
+		#meta = "\nTable meta at:\t{}".format(self.tblmeta.index)		
+		#prev = "\nLocated at:\t{}".format(self.index)		
+		#prev = "\nPrevious at:\t{}".format(self.previous)		
+		#snext = "\nNext at:\t\t{}".format(self.next)		
+		#count = "\nCurrent count:\t{}".format(self.count)
+
+		#return info + meta + prev + snext + count	
+		return info
+
+	def __str__(self):
+		return "<Row> {from: " + str(self.tblmeta.index) + \
+			", index: " + str(self.index) + \
+			", id: " + str(self.id) + \
+			", available: " + str(self.available) + \
+			", previous: " + str(self.previous) + \
+			", next: " + str(self.next) + \
+		"}"
