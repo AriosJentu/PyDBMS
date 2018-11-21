@@ -125,7 +125,7 @@ class DataBaseMeta(Struct):
 #Meta information about table
 class TableMeta(Struct):
 
-	SIZE = 32 + 17 + consts.fieldscount*24
+	SIZE = 32 + 19 + consts.fieldscount*24
 
 	def __init__(self):
 		
@@ -144,6 +144,8 @@ class TableMeta(Struct):
 		self.fields = []
 		self.types = []
 
+		self.fcount = 0
+
 		self.positions = {"__rowid__": 1}
 
 	def _write_to_file(self):
@@ -152,13 +154,11 @@ class TableMeta(Struct):
 		file = self.file
 
 		file.writestr(self.name, starts=stpos, cbytes=32)
-		
 		self._update_pages()
-
 		file.writeint(self.rowlen, starts=stpos+32+15, cbytes=2)
-		file.writeint(len(self.fields), starts=stpos+32+17, cbytes=2)
+		file.writeint(self.fcount, starts=stpos+32+17, cbytes=2)
 
-		stpos += 32 + 17
+		stpos += 32 + 19
 		for i, v in enumerate(self.fields):
 			file.writestr(v+self.types[i].name, starts=stpos, cbytes=24)
 			stpos += 24
@@ -191,11 +191,11 @@ class TableMeta(Struct):
 		self.firstelmnt = file.readint(starts=stpos+32+9, cbytes=3)
 		self.firstrmvd = file.readint(starts=stpos+32+12, cbytes=3)
 		self.rowlen = file.readint(starts=stpos+32+15, cbytes=2)
-		count = file.readint(starts=stpos+32+17, cbytes=2)
+		self.fcount = file.readint(starts=stpos+32+17, cbytes=2)
 
-		stpos += 32 + 17
+		stpos += 32 + 19
 		pos = 4
-		for i in range(count):
+		for i in range(self.fcount):
 			field = file.readstr(starts=stpos+i*24, cbytes=21)
 			ctype = Types[file.readstr(starts=stpos+i*24+21, cbytes=3)]
 			
@@ -221,6 +221,7 @@ class TableMeta(Struct):
 	def _fill_fields(self, fdict={}):
 		self.fields = list(fdict.keys())
 		self.types = list(fdict.values())
+		self.fcount = len(self.fields)
 
 
 	def create_page(self):
@@ -294,6 +295,8 @@ class TableMeta(Struct):
 		page._update_to_file()
 
 
+
+
 	def _get_write_position(self):
 
 		for i in self.get_pages():
@@ -318,18 +321,19 @@ class TableMeta(Struct):
 			"'" + i + "': " + str(v) for i, v in self.positions.items()
 		]
 
-		info = "\nTABLE META INFORMATION:"
-		name = "\nName:\t\t\t\t{}".format(self.name)
-		indx = "\nIndex:\t\t\t\t{}".format(self.index)
+		inf = "\nTABLE META INFORMATION:"
+		n = "\nName:\t\t\t\t{}".format(self.name)
+		i = "\nIndex:\t\t\t\t{}".format(self.index)
 		cnt = "\nCount:\t\t\t\t{}".format(self.count)
 		fpage = "\nFirst page at:\t\t{}".format(self.firstpage)
 		fel = "\nFirst element at:\t{}".format(self.firstelmnt)
 		frem = "\nFirst removed at:\t{}".format(self.firstrmvd)
 		rlen = "\nRow Length:\t\t\t{}".format(self.rowlen)
+		fldc = "\nFields count:\t\t{}".format(self.fcount)
 		flds = "\nFields:\t\t\t\t["+", ".join(fields)+"]"
 		poz = "\nPositions:\t\t\t["+ ", ".join(poses) + "]"
 
-		return info + name + indx + cnt + fpage + fel + frem + rlen + flds + poz
+		return inf + n + i + cnt + fpage + fel + frem + rlen + fldc + flds + poz
 
 	def __str__(self):
 
@@ -340,7 +344,7 @@ class TableMeta(Struct):
 			", first_element: " + str(self.firstelmnt) + \
 			", first_removed: " + str(self.firstrmvd) + \
 			", row_length: " + str(self.rowlen) + \
-			", fields_count: " + str(len(self.fields)) + \
+			", fields_count: " + str(self.fcount) + \
 		"}"
 
 

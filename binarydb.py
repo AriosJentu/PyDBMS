@@ -35,6 +35,7 @@ class DataBase(classes.Struct):
 		self._META._write_tables_count(self._META.tblcount+1)
 		page = self.create_page(name)
 
+
 	def create_page(self, tblname):
 
 		if tblname not in self:
@@ -96,7 +97,8 @@ class DataBase(classes.Struct):
 			meta = classes.TableMeta()
 			meta.index = 16 + i*classes.TableMeta.SIZE
 			meta.file = self._FILE
-			meta._write_to_file()				
+			meta._write_to_file()	
+
 
 		self.create_table("__test__", {
 			"Test1": classes.Types.integer, 
@@ -104,11 +106,6 @@ class DataBase(classes.Struct):
 			"Test3": classes.Types.bool
 		})
 
-		"""self.create_table("__test2__", {
-			"Tests1": classes.Types.integer, 
-			"Testss2": classes.Types.string, 
-			"Tests3": classes.Types.bool
-		})"""
 
 	def __getattr__(self, val):
 		if val not in self.__dict__.keys():
@@ -128,10 +125,13 @@ db.create_table("Hello2", {
 	"Test2": classes.Types.str, 
 	"Test3": classes.Types.bol
 })
+db.close()
+db.connect()
 
-print(db._META.tables["__test__"])
-print(db.Hello)
-print(db.Hello2)
+
+print(db._META.tables["__test__"], db.__test__.fields)
+print(db.Hello, db.Hello.fields)
+print(db.Hello2, db.Hello2.fields)
 print()
 print(classes.Types.int)
 
