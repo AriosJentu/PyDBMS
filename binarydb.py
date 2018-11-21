@@ -51,6 +51,13 @@ class DataBase(classes.Struct):
 
 		return self[tblname].insert(values, fields)
 
+	def select_from(self, tblname, fields=[], expr="1"):
+
+		if tblname not in self:
+			raise exc.DBTableException(1, tblname)
+
+		return self[tblname].select(fields, expr)
+
 	def connect(self):
 
 		if not self._BINFILE.is_file_exist():
@@ -122,31 +129,39 @@ db.create()
 db.close()
 db.connect()
 
-db.create_table("Hello", {"Test": classes.Types.str})
+db.create_table("Hello", {
+	"Test": classes.Types.str,
+	"Keks": classes.Types.int,
+})
 db.create_table("Hello2", {
 	"Test1": classes.Types.int, 
 	"Test2": classes.Types.str, 
 	"Test3": classes.Types.bol
 })
 
+a = db.Hello.insert(["KEKSON"], ["Test"])
+b = db.Hello.insert(["145"], ["Test"])
+c = db.Hello.insert(["HELLO WORLD"], ["Test"])
+d = db.Hello.insert(["Sasai Kudasai", 12], ["Test", "Keks"])
+
 db.close()
 db.connect()
 
-a = db.Hello.insert(["144"], ["Test"])
-b = db.Hello.insert(["145"], ["Test"])
-
+"""
 print(db._META.tables["__test__"], db.__test__.fields)
 print(db.Hello, db.Hello.fields)
 print(db.Hello2, db.Hello2.fields)
 print()
 print(classes.Types.int)
+"""
 
-for i in db.Hello.get_rows():
-	print("::", i.values)
+x = db.select_from("Hello", ["Keks", "Test", "__rowid__"], "1")
+print(x)
+y = db.Hello.select(["Keks"], "__rowid__ > 0")
 
+#db.__test__.create_page()
 
-db.__test__.create_page()
-
+"""
 for i in db.__test__.get_pages():
 	print(":", str(i))
 
@@ -159,3 +174,4 @@ print()
 
 for i in db.__test__.ipages():
 	print(i)
+"""

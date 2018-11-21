@@ -11,6 +11,15 @@ def where(expr, variables):
 		)
 	)
 
+def format_items(dict):
+	return ", ".join(
+				[
+					"'"+ i + "': " 
+					+ str(v) 
+					for i, v in dict.items() 
+					if i[:2] != "__"
+				]
+			)
 
 #C-Struct Class
 class Struct:
@@ -35,9 +44,7 @@ class Struct:
 			yield i
 
 	def __repr__(self):
-		return "<Struct> {" + (
-			", ".join(["'"+ i + "': " + str(v) for i, v in self.items()])
-		) + "}"
+		return "<Struct> {" + format_items(self) + "}"
 
 	def keys(self):
 		return self.__dict__.keys()
@@ -47,6 +54,23 @@ class Struct:
 
 	def items(self):
 		return self.__dict__.items()
+
+class Select(Struct):
+
+	def __init__(self, fields=[]):
+		self.fields = fields
+		self.values = []
+
+	def append(self, row):
+		self.values.append(row)
+
+	def __repr__(self):
+		return "<Select Rows> {\n\tfields: " + (
+			str(self.fields)
+		) + "\n\tvalues:\n\t\t" + (
+			"\n\t\t".join([str(i) for i in self.values])
+		) + "\n}"
+
 
 
 class Type(Struct):
@@ -231,6 +255,13 @@ class TableMeta(Struct):
 		self.types = list(fdict.values())
 		self.fcount = len(self.fields)
 
+	def _get_valid_fields(self, fields=[]):
+		vals = []
+		for i in fields:
+			if i in self.fields or i == "__rowid__":
+				vals.append(i)
+
+		return vals
 
 	def create_page(self):
 
@@ -306,11 +337,11 @@ class TableMeta(Struct):
 
 			yield row
 
-	def get_rows(self, removed=False):
+	def get_rows(self, removed=False, fields=[]):
 
 		rows = []
 		for i in self.irows(removed):
-			i._read_from_file()
+			i._read_from_file(fields)
 			rows.append(i)
 
 		return rows
@@ -345,6 +376,7 @@ class TableMeta(Struct):
 		row = Row(pos)
 		row.tblmeta = self
 		row.id = self.count
+		row.available = 1
 		row.previous = self.lastelmnt
 		row.values = Struct({v:values[i] for i, v in enumerate(fields)})
 		row._write_to_file()
@@ -354,6 +386,18 @@ class TableMeta(Struct):
 		self._update_pages()
 
 
+	def select(self, fields=[], expr="1"):
+
+		fields = self._get_valid_fields(fields)
+		selects = Select(fields)
+
+		for i in self.get_rows():
+
+			if where(expr, i.values):
+				i._select_by_fields(fields)
+				selects.append(i)
+
+		return selects
 
 	def _get_write_position(self):
 
@@ -495,6 +539,23 @@ class Row(Struct):
 		self.values = Struct()
 		self.values.id = self.id
 
+	def _select_by_fields(self, fields=[]):
+
+		fields = self.tblmeta._get_valid_fields(fields)
+		
+		if not fields or type(fields) != list:
+			fields = self.tblmeta.fields
+
+		res = Struct()
+		for i in fields:
+			if i in self.values:
+				res[i] = self.values[i]
+
+		self.values = res
+		if "__rowid__" in fields:
+			self.values.id = self.id
+
+
 	def _write_to_file(self):
 
 		stpos = self.index
@@ -515,7 +576,13 @@ class Row(Struct):
 				cbytes=otype.size
 			)
 
-	def _read_from_file(self):
+
+	def _read_from_file(self, fields=[]):
+
+		fields = self.tblmeta._get_valid_fields(fields)
+
+		if not fields or type(fields) != list:
+			fields = self.tblmeta.fields
 
 		stpos = self.index
 		file = self.tblmeta.file
@@ -523,7 +590,7 @@ class Row(Struct):
 		self._read_indexes()
 		for i, v in self.tblmeta.positions.items():
 
-			if i not in self.tblmeta.fields:
+			if i not in fields:
 				continue
 
 			index = self.tblmeta.fields.index(i)
@@ -534,7 +601,6 @@ class Row(Struct):
 				starts=stpos+v,
 				cbytes=otype.size
 			)
-
 
 
 	def _read_indexes(self):
@@ -548,6 +614,8 @@ class Row(Struct):
 		self.previous = file.readint(starts=size-6, cbytes=3)
 		self.next = file.readint(starts=size-3, cbytes=3)
 		self.values.id = self.id
+		self.values.__rowid__ = self.id
+
 
 	def _write_indexes(self):
 
@@ -579,4 +647,5 @@ class Row(Struct):
 			", available: " + str(self.available) + \
 			", previous: " + str(self.previous) + \
 			", next: " + str(self.next) + \
+			" : " + format_items(self.values) + \
 		"}"
