@@ -124,7 +124,8 @@ class DataBase(classes.Struct):
 
 		return self[val]
 
-"""
+#TESTING
+
 db = DataBase("testdb2.jpdb")
 db.create()
 db.close()
@@ -134,57 +135,38 @@ db.create_table("Hello", {
 	"Test": str,
 	"Keks": int,
 })
-db.create_table("Hello2", {
-	"Test1": int, 
-	"Test2": str, 
-	"Test3": bool
-})
 
-db.Hello.insert(["KEKSON"], ["Test"])
-db.Hello.insert(["145"], ["Test"])
-db.Hello.insert(["HELLO WORLD"], ["Test"])
-db.Hello.insert(["Sasai Kudasai", 12], ["Test", "Keks"])
+def decor(func):
+	def wrapper(inputs, *args, removed=False):
 
-db.close()
-db.connect()
-"""
+		print()
+		print(inputs+":")
+		func(*args)
+		sel = db.Hello.select("*", removed=removed)
+		print(sel)
+		print("rempos: " + str(db.Hello.lastrmvd))
+		print("fpos: " + str(db.Hello.firstelmnt))
+		print("lpos: " + str(db.Hello.lastelmnt))
 
-"""
-print(db._META.tables["__test__"], db.__test__.fields)
-print(db.Hello, db.Hello.fields)
-print(db.Hello2, db.Hello2.fields)
-print()
-print(classes.Types.int)
-"""
+	return wrapper
 
-"""
-db.Hello.delete("id < 2")
-x = db.select_from("Hello", ["Keks", "Test", "__rowid__"], "1")
-print(x)
-print()
+for i in range(8):
+	db.Hello.insert(["Kek", i])
 
-y = db.Hello.select(["*"], "__rowid__ > 2")
-print(y)
+insert = decor(db.Hello.insert)
+remove = decor(db.Hello.delete)
+update = decor(db.Hello.update)
+passed = decor(lambda: 0)
 
-print()
-print("Removed:")
-for i in db.Hello.get_rows(True):
-	print(i)
-
-db.__test__.create_page()
-"""
-
-"""
-for i in db.__test__.get_pages():
-	print(":", str(i))
-
-print()
-
-for i in db.Hello.get_pages():
-	print(":", str(i))
-
-print()
-
-for i in db.__test__.ipages():
-	print(i)
-"""
+passed("INSERTING 8 ELEMENTS")
+remove("REMOVING 1", "id < 3")
+remove("REMOVING 2", "id >= 6")
+passed("ALREADY REMOVED ELEMENTS", removed=True)
+insert("INSERTING 1", ["Kekos", 11])
+update("UPDATING", ["*"], ["Lalka", 12], "id >= 3")
+passed("AFTER UPDATING")
+insert("INSERTING 2", ["Kekos", 13])
+passed("REMOVED AFTER INSERT", removed=True)
+remove("REMOVING ALL", "1")
+passed("NOW ALL TABLE")
+passed("NOW ALL REMOVED ELEMENTS IN TABLE", removed=True)

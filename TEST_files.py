@@ -42,8 +42,6 @@ def test_delete():
 	assert select.count() == 10
 
 def test_insert_error():
-	with pytest.raises(AttributeError):
-		database.Hello.insert(["Kekos"], ["Kek"]) 
-		database.Hello.insert(["KEKSON"], ["Faaka"]) 
-
-
+	with pytest.raises(exc.DBValueException):
+		database.Hello.insert(["12"], ["Kek"]) 
+		database.Hello.insert(["KEKOS"], ["Faaka"]) 

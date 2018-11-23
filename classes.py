@@ -11,12 +11,17 @@ def where(expr, variables):
 		)
 	)
 
-def format_items(dict):
+def format_items(dictk):
+
+	for i in dictk.keys():
+		if type(dictk[i]) == str:
+			dictk[i] = "'"+dictk[i]+"'"
+
 	return ", ".join(
 				[
 					"'"+ i + "': " 
 					+ str(v) 
-					for i, v in dict.items() 
+					for i, v in dictk.items()
 					if i[:2] != "__"
 				]
 			)
@@ -70,7 +75,8 @@ class Select(Struct):
 	def __repr__(self):
 		return "<Select Rows> {\n\tfields: " + (
 			str(self.fields)
-		) + "\n\tvalues:\n\t\t" + (
+		) + "\n\tcount:\t" + str(len(self.values)) + (
+			"\n\tvalues:\n\t\t" + 
 			"\n\t\t".join([str(i) for i in self.values])
 		) + "\n}"
 
@@ -178,7 +184,7 @@ class TableMeta(Struct):
 		self.firstpage = 0
 		self.firstelmnt = 0
 		self.lastelmnt = 0
-		self.firstrmvd = 0
+		self.lastrmvd = 0
 		
 		self.fields = []
 		self.types = []
@@ -216,7 +222,7 @@ class TableMeta(Struct):
 		file.writeint(self.firstpage, starts=stpos+32+6, cbytes=3)
 		file.writeint(self.firstelmnt, starts=stpos+32+9, cbytes=3)
 		file.writeint(self.lastelmnt, starts=stpos+32+12, cbytes=3)
-		file.writeint(self.firstrmvd, starts=stpos+32+15, cbytes=3)
+		file.writeint(self.lastrmvd, starts=stpos+32+15, cbytes=3)
 
 
 	def _read_from_file(self):
@@ -230,7 +236,7 @@ class TableMeta(Struct):
 		self.firstpage = file.readint(starts=stpos+32+6, cbytes=3)
 		self.firstelmnt = file.readint(starts=stpos+32+9, cbytes=3)
 		self.lastelmnt = file.readint(starts=stpos+32+12, cbytes=3)
-		self.firstrmvd = file.readint(starts=stpos+32+15, cbytes=3)
+		self.lastrmvd = file.readint(starts=stpos+32+15, cbytes=3)
 		self.rowlen = file.readint(starts=stpos+32+18, cbytes=2)
 		self.fcount = file.readint(starts=stpos+32+20, cbytes=2)
 
@@ -260,8 +266,16 @@ class TableMeta(Struct):
 
 
 	def _fill_fields(self, fdict={}):
-		self.fields = list(fdict.keys())
-		self.types = list(fdict.values())
+
+		fields = list(fdict.keys())
+		types = list(fdict.values())
+
+		if len(fields) != len(types):
+			raise exc.DBValueException(0)
+
+		self.fields = fields
+		self.types = types
+
 		
 		for i, v in enumerate(self.types):
 			if v in Types:
@@ -273,9 +287,26 @@ class TableMeta(Struct):
 
 		self.fcount = len(self.fields)
 
-	def _get_valid_fields(self, fields=[]):
+	def _check_values_for_fields(self, fields=[], values=[]):
+
+		if len(fields) != len(values):
+			raise exc.DBValueException(3, len(values), len(fields))
+
+		for i, v in enumerate(fields):
+			
+			ctype = self.types[self.fields.index(v)]
+			vtype = Types[type(values[i])]
+
+			if vtype != ctype:
+				raise exc.DBValueException(2, i, ctype.name, vtype.name)
+
+
+	def _get_valid_fields(self, fields=[], replace=False):
+		
 		vals = []
-		if "*" in fields:
+		s = replace and (not fields or type(fields) != list)
+
+		if s or "*" in fields:
 			return self.fields
 
 		for i in fields:
@@ -283,6 +314,7 @@ class TableMeta(Struct):
 				vals.append(i)
 
 		return vals
+
 
 	def create_page(self):
 
@@ -345,7 +377,7 @@ class TableMeta(Struct):
 
 		#Returning almost unreaded rows (only indexes)
 		if removed:
-			index = self.firstrmvd
+			index = self.lastrmvd
 		else:
 			index = self.firstelmnt
 	
@@ -370,16 +402,24 @@ class TableMeta(Struct):
 
 	def insert(self, values=[], fields=[]):
 
-		if self.firstrmvd:
+		fields = self._get_valid_fields(fields, replace=True)
+		self._check_values_for_fields(fields, values)
+
+		if self.lastrmvd:
 			
-			r_row = Row(self.firstrmvd)
+			r_row = Row(self.lastrmvd)
 			r_row.tblmeta = self
 			r_row._read_indexes()
-			r_row.next = 0
-			r_row._write_indexes()
 
-			pos = self.firstrmvd
-			self.firstrmvd = r_row.previous
+			if r_row.next:
+				pr_row = Row(r_row.next)
+				pr_row.tblmeta = self
+				pr_row._read_indexes()
+				pr_row.previous = 0
+				pr_row._write_indexes()
+
+			pos = self.lastrmvd
+			self.lastrmvd = r_row.next
 
 		else:
 
@@ -410,18 +450,33 @@ class TableMeta(Struct):
 		self._update_pages()
 
 
-	def select(self, fields=[], expr="1"):
+	def select(self, fields=[], expr="1", removed=False):
 
 		fields = self._get_valid_fields(fields)
 		selects = Select(fields)
 
-		for i in self.get_rows():
+		for i in self.get_rows(removed=removed):
 
 			if where(expr, i.values):
 				i._select_by_fields(fields)
 				selects.append(i)
 
 		return selects
+
+
+
+	def update(self, fields=[], values=[], expr="1"):
+		
+		fields = self._get_valid_fields(fields)
+		self._check_values_for_fields(fields, values)
+
+		for i in self.get_rows():
+
+			if where(expr, i.values):
+				i._select_by_fields(fields)
+				i._update_by_fields(fields, values)
+
+
 
 	def delete(self, expr="1"):
 
@@ -432,23 +487,35 @@ class TableMeta(Struct):
 			cur_row = Row(index)
 			cur_row.tblmeta = self
 			cur_row._read_from_file()
-			saved = index
 			index = cur_row.next
 
 			if where(expr, cur_row.values):
 				
 				#Inverse: next means previous, and previous means next! (Reading/writing backward)
 				
-				if saved == self.firstelmnt:
+				if cur_row.index == self.firstelmnt:
 					self.firstelmnt = cur_row.next
+
+				if cur_row.index == self.lastelmnt:
+					self.lastelmnt = cur_row.previous
 
 				cur_row._drop_row()
 				cur_row.available = 2
 				cur_row.previous = 0
-				cur_row.next = self.firstrmvd
+				cur_row.next = self.lastrmvd
 				cur_row._write_indexes()
+
+				if self.lastrmvd:
+					
+					prev_row = Row(self.lastrmvd)
+					prev_row.tblmeta = self
+					prev_row._read_indexes()
+					prev_row.previous = cur_row.index
+					prev_row._write_indexes()
+
 				
-				self.firstrmvd = saved
+				self.lastrmvd = cur_row.index
+				self.count -= 1
 				self._update_pages()
 
 
@@ -484,7 +551,7 @@ class TableMeta(Struct):
 		fp = "\nFirst page at:\t\t{}".format(self.firstpage)
 		fel = "\nFirst element at:\t{}".format(self.firstelmnt)
 		lel = "\nLast element at:\t{}".format(self.lastelmnt)
-		fr = "\nFirst removed at:\t{}".format(self.firstrmvd)
+		fr = "\nFirst removed at:\t{}".format(self.lastrmvd)
 		rl = "\nRow Length:\t\t\t{}".format(self.rowlen)
 		fc = "\nFields count:\t\t{}".format(self.fcount)
 		fl = "\nFields:\t\t\t\t["+", ".join(fields)+"]"
@@ -500,7 +567,7 @@ class TableMeta(Struct):
 			", first_page: " + str(self.firstpage) + \
 			", first_element: " + str(self.firstelmnt) + \
 			", last_element: " + str(self.lastelmnt) + \
-			", first_removed: " + str(self.firstrmvd) + \
+			", first_removed: " + str(self.lastrmvd) + \
 			", row_length: " + str(self.rowlen) + \
 			", fields_count: " + str(self.fcount) + \
 		"}"
@@ -614,9 +681,6 @@ class Row(Struct):
 	def _select_by_fields(self, fields=[]):
 
 		fields = self.tblmeta._get_valid_fields(fields)
-		
-		if not fields or type(fields) != list:
-			fields = self.tblmeta.fields
 
 		res = Struct()
 		for i in fields:
@@ -626,6 +690,14 @@ class Row(Struct):
 		self.values = res
 		if "__rowid__" in fields:
 			self.values.id = self.id
+
+
+	def _update_by_fields(self, fields=[], values=[]):
+
+		for i, v in enumerate(fields):
+			self.values[v] = values[i]
+
+		self._write_to_file()
 
 
 	def _write_to_file(self):
@@ -651,10 +723,7 @@ class Row(Struct):
 
 	def _read_from_file(self, fields=[]):
 
-		fields = self.tblmeta._get_valid_fields(fields)
-
-		if not fields or type(fields) != list:
-			fields = self.tblmeta.fields
+		fields = self.tblmeta._get_valid_fields(fields, replace=True)
 
 		stpos = self.index
 		file = self.tblmeta.file
@@ -721,3 +790,4 @@ class Row(Struct):
 			", next: " + str(self.next) + \
 			" : " + format_items(self.values) + \
 		"}"
+

@@ -19,9 +19,9 @@ class DBException(Exception):
 		10:	"Count of pages for table '{}' too much.",
 		11:	DoesntExist.format("Field Type", "{}"),
 		12:	"Incorrect values count for {}: Need '{}', Got: '{}'.",
-		13:	"Value with index '{}' need to be '{}', but got '{}'.",
+		13:	"Value with index {} need to be '{}', but got '{}'.",
 		14:	"Data Base already connected.",
-		15:	"Count of values and fields are different.",
+		15:	"Count of values and existant fields are different: {} and {}.",
 	}
 	
 	def __init__(self, message, *args):
@@ -78,8 +78,8 @@ class DBValueException(DBException):
 		indexes = [
 			"Count of fields and count of types are different.",
 			"Incorrect values count for {}: Need '{}', Got: '{}'.",
-			"Value with index '{}' need to be '{}', but got '{}'.",
-			"Count of values and fields are different.",
+			"Value with index {} need to be '{}', but got '{}'.",
+			"Count of values and existant fields are different: {} and {}.",
 		]
 
 		super().__init__(indexes[i], *args)
