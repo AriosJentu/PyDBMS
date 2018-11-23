@@ -465,7 +465,7 @@ class TableMeta(Struct):
 
 
 
-	def update(self, fields=[], values=[], expr="1"):
+	def update(self, values=[], fields=[], expr="1"):
 		
 		fields = self._get_valid_fields(fields)
 		self._check_values_for_fields(fields, values)
@@ -514,8 +514,8 @@ class TableMeta(Struct):
 					prev_row._write_indexes()
 
 				
+				#self.count -= 1
 				self.lastrmvd = cur_row.index
-				self.count -= 1
 				self._update_pages()
 
 

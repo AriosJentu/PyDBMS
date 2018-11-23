@@ -13,10 +13,18 @@ class DataBase(classes.Struct):
 		self._BINFILE = binfile.BinaryFile(name)										#Binary file of database
 
 
+	def _check_table_name(self, name, nots=False):
+		if not nots:
+			if name not in self:
+				raise exc.DBTableException(1, name)
+		else:
+			if name in self:
+				raise exc.DBTableException(0, name)
+
+
 	def create_table(self, name, fields={}):
 
-		if name in self:
-			raise exc.DBTableException(0, name)
+		self._check_table_name(name, True)
 
 		self._FILE.seek(0, 2)
 
@@ -38,34 +46,33 @@ class DataBase(classes.Struct):
 
 	def create_page(self, tblname):
 
-		if tblname not in self:
-			raise exc.DBTableException(1, tblname)
-
+		self._check_table_name(tblname)
 		return self[tblname].create_page()
 
 
 	def insert_into(self, tblname, values=[], fields=[]):
 		
-		if tblname not in self:
-			raise exc.DBTableException(1, tblname)
-
+		self._check_table_name(tblname)
 		return self[tblname].insert(values, fields)
+
 
 	def select_from(self, tblname, fields=[], expr="1"):
 
-		if tblname not in self:
-			raise exc.DBTableException(1, tblname)
-
+		self._check_table_name(tblname)
 		return self[tblname].select(fields, expr)
+
+
+	def update_set(self, tblname, values=[], fields=[], expr="1"):
+
+		self._check_table_name(tblname)
+		return self[tblname].update(values, fields, expr)
 
 	def connect(self):
 
 		if not self._BINFILE.is_file_exist():
 			raise exc.DBFileException(1, self._DBNAME)		
 
-		if self._FILE:
-			raise exc.DBConnectionException(1)
-
+		if self._FILE: raise exc.DBConnectionException(1)
 		self._FILE = self._BINFILE.open("r+")
 
 
@@ -163,7 +170,7 @@ remove("REMOVING 1", "id < 3")
 remove("REMOVING 2", "id >= 6")
 passed("ALREADY REMOVED ELEMENTS", removed=True)
 insert("INSERTING 1", ["Kekos", 11])
-update("UPDATING", ["*"], ["Lalka", 12], "id >= 3")
+update("UPDATING", ["Lalka", 12], ["*"], "id >= 3")
 passed("AFTER UPDATING")
 insert("INSERTING 2", ["Kekos", 13])
 passed("REMOVED AFTER INSERT", removed=True)
