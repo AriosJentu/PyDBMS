@@ -551,7 +551,7 @@ class TableMeta(Struct):
 		fp = "\nFirst page at:\t\t{}".format(self.firstpage)
 		fel = "\nFirst element at:\t{}".format(self.firstelmnt)
 		lel = "\nLast element at:\t{}".format(self.lastelmnt)
-		fr = "\nFirst removed at:\t{}".format(self.lastrmvd)
+		fr = "\nLast removed at:\t{}".format(self.lastrmvd)
 		rl = "\nRow Length:\t\t\t{}".format(self.rowlen)
 		fc = "\nFields count:\t\t{}".format(self.fcount)
 		fl = "\nFields:\t\t\t\t["+", ".join(fields)+"]"
