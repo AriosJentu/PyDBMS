@@ -1,7 +1,7 @@
 import ply.lex as lex
 from ply.lex import TOKEN
 import re
-
+    
 #s = '''CREATE TABLE test(int field, char field1)'''
 
 tokens = (
@@ -29,6 +29,7 @@ t_COMMA = r','
 
 @TOKEN(ident)
 def t_NAME(t):
+
 
     if (t.value.upper() == 'CREATE'):
         t.type = 'CREATE'
