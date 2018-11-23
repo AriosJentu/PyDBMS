@@ -55,16 +55,26 @@ def t_NAME(t):
     if (t.value.upper() == 'VALUES'):
         t.type = 'VALUES'
 
-    if (t.value.lower() == 'int'):
+    if (
+            t.value.lower() == 'int' or
+            t.value.lower() == 'integer'
+        ):
         t.type = 'int'
 
-    if (t.value.lower() == 'bol'):
+    if (
+            t.value.lower() == 'bol' or
+            t.value.lower() == 'bool'
+        ):
         t.type = 'bol'
 
-    if (t.value.lower() == 'str'):
+    if (
+            t.value.lower() == 'str' or
+            t.value.lower() == 'string'
+        ):
         t.type = 'str'    
         
     return t
+
 
 
 

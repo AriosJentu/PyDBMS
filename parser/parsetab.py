@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = 'COMMA CREATE FROM INSERT INTO LPAREN NAME RPAREN SELECT SHOW TABLE VALUES VAR bol int strstart : createcreate : CREATE create_bodycreate_body : TABLE NAME LPAREN values RPARENvalues : NAME type \n              | values COMMA NAME typetype : int \n            | str\n            | bol'
+_lr_signature = 'COMMA CREATE FROM INSERT INTO LPAREN NAME RPAREN SELECT SHOW TABLE VALUES VAR bol int strstart : create\n             | show\n             | select\n             | insertcreate : CREATE create_bodycreate_body : TABLE NAME LPAREN values RPARENvalues : NAME type \n              | values COMMA NAME typeshow : SHOW CREATE TABLE NAMEselect : SELECT select_bodyselect_body : fields FROM NAME\n                   | LPAREN fields RPAREN FROM NAMEinsert : INSERT insert_bodyinsert_body : INTO NAME LPAREN fields RPAREN\n                   | INTO NAME VALUES LPAREN fields RPARENfields : NAME\n              | fields COMMA NAMEtype : int \n            | str\n            | bol'
     
-_lr_action_items = {'CREATE':([0,],[3,]),'$end':([1,2,4,14,],[0,-1,-2,-3,]),'TABLE':([3,],[5,]),'NAME':([5,7,15,],[6,8,16,]),'LPAREN':([6,],[7,]),'int':([8,16,],[11,11,]),'str':([8,16,],[12,12,]),'bol':([8,16,],[13,13,]),'RPAREN':([9,10,11,12,13,17,],[14,-4,-6,-7,-8,-5,]),'COMMA':([9,10,11,12,13,17,],[15,-4,-6,-7,-8,-5,]),}
+_lr_action_items = {'CREATE':([0,7,],[6,12,]),'SHOW':([0,],[7,]),'SELECT':([0,],[8,]),'INSERT':([0,],[9,]),'$end':([1,2,3,4,5,10,13,17,26,27,41,43,44,47,],[0,-1,-2,-3,-4,-5,-10,-13,-9,-11,-6,-12,-14,-15,]),'TABLE':([6,12,],[11,20,]),'LPAREN':([8,19,24,31,],[16,25,30,36,]),'NAME':([8,11,16,18,20,21,22,25,30,34,36,42,],[15,19,15,24,26,27,28,32,15,43,15,46,]),'INTO':([9,],[18,]),'FROM':([14,15,28,29,],[21,-16,-17,34,]),'COMMA':([14,15,23,28,33,35,37,38,39,40,45,48,],[22,-16,22,-17,42,22,-7,-18,-19,-20,22,-8,]),'RPAREN':([15,23,28,33,35,37,38,39,40,45,48,],[-16,29,-17,41,44,-7,-18,-19,-20,47,-8,]),'VALUES':([24,],[31,]),'int':([32,46,],[38,38,]),'str':([32,46,],[39,39,]),'bol':([32,46,],[40,40,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'start':([0,],[1,]),'create':([0,],[2,]),'create_body':([3,],[4,]),'values':([7,],[9,]),'type':([8,16,],[10,17,]),}
+_lr_goto_items = {'start':([0,],[1,]),'create':([0,],[2,]),'show':([0,],[3,]),'select':([0,],[4,]),'insert':([0,],[5,]),'create_body':([6,],[10,]),'select_body':([8,],[13,]),'fields':([8,16,30,36,],[14,23,35,45,]),'insert_body':([9,],[17,]),'values':([25,],[33,]),'type':([32,46,],[37,48,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -27,12 +27,24 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> start","S'",1,None,None,None),
-  ('start -> create','start',1,'p_start','newParser.py',57),
-  ('create -> CREATE create_body','create',2,'p_create','newParser.py',63),
-  ('create_body -> TABLE NAME LPAREN values RPAREN','create_body',5,'p_create_body','newParser.py',68),
-  ('values -> NAME type','values',2,'p_values','newParser.py',74),
-  ('values -> values COMMA NAME type','values',4,'p_values','newParser.py',75),
-  ('type -> int','type',1,'p_type','newParser.py',83),
-  ('type -> str','type',1,'p_type','newParser.py',84),
-  ('type -> bol','type',1,'p_type','newParser.py',85),
+  ('start -> create','start',1,'p_start','newParser.py',75),
+  ('start -> show','start',1,'p_start','newParser.py',76),
+  ('start -> select','start',1,'p_start','newParser.py',77),
+  ('start -> insert','start',1,'p_start','newParser.py',78),
+  ('create -> CREATE create_body','create',2,'p_create','newParser.py',84),
+  ('create_body -> TABLE NAME LPAREN values RPAREN','create_body',5,'p_create_body','newParser.py',89),
+  ('values -> NAME type','values',2,'p_values','newParser.py',95),
+  ('values -> values COMMA NAME type','values',4,'p_values','newParser.py',96),
+  ('show -> SHOW CREATE TABLE NAME','show',4,'p_show','newParser.py',113),
+  ('select -> SELECT select_body','select',2,'p_select','newParser.py',118),
+  ('select_body -> fields FROM NAME','select_body',3,'p_select_body','newParser.py',123),
+  ('select_body -> LPAREN fields RPAREN FROM NAME','select_body',5,'p_select_body','newParser.py',124),
+  ('insert -> INSERT insert_body','insert',2,'p_insert','newParser.py',142),
+  ('insert_body -> INTO NAME LPAREN fields RPAREN','insert_body',5,'p_insert_body','newParser.py',148),
+  ('insert_body -> INTO NAME VALUES LPAREN fields RPAREN','insert_body',6,'p_insert_body','newParser.py',149),
+  ('fields -> NAME','fields',1,'p_fields','newParser.py',163),
+  ('fields -> fields COMMA NAME','fields',3,'p_fields','newParser.py',164),
+  ('type -> int','type',1,'p_type','newParser.py',181),
+  ('type -> str','type',1,'p_type','newParser.py',182),
+  ('type -> bol','type',1,'p_type','newParser.py',183),
 ]

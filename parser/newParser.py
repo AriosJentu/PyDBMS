@@ -22,49 +22,60 @@ class PCreate(Struct):
     def __init__(self, name=""):
 
         self.name = name
-        self.values = PValues()
-        self.types = PTypes()
+        self.type = "create"
+
+        self.values = []
+        self.types = []
         
-    def set_name(self, name):
-        self.name = name
-
-
     def set_vars(self, vars_):
         
         self.values = vars_.vars[0]
         self.types = vars_.vars[1]
 
-class Vars:
+
+class PShow(PCreate):
+
+    def __init__(self, name=""):
+
+        self.name = name
+        self.type = "show"
+
+    def set_vars(self, *args): pass
+
+class PSelect(Struct):
+
+    def __init__(self, name=""):
+
+        self.name = name
+        self.type = "select"
+
+        self.fields = []
+        
+
+    def set_fields(self, fields):
+        self.fields = fields
+
+class PInsert(PSelect):
+    pass
+
+class PVars:
     def __init__(self):
         self.vars = [[], []]
 
     def append_values(self, *values):
-
         self.vars[0].append(*values)
         
 
     def append_types(self, *types):
-
         self.vars[1].append(*types)
         
 
-class PValues(Struct):
-
-    def __init__(self, *values):
-        self.values = [i for i in values]
-
-    def append(self, *values):
-        for i in values:
-            self.values.append(i)
-
-    def __call__(self):
-        return self.values
-
-class PTypes(PValues):
-    pass
 
 def p_start(p):
-    '''start : create'''
+    '''start : create
+             | show
+             | select
+             | insert'''
 
     p[0] = p[1]
 
@@ -87,7 +98,7 @@ def p_values(p):
     value, vtype = 0, 0
     if len(p) == 3:
 
-        p[0] = Vars()
+        p[0] = PVars()
         value, vtype = p[1:3]
 
     else:
@@ -98,6 +109,73 @@ def p_values(p):
     p[0].append_values(value)
     p[0].append_types(vtype)
 
+def p_show(p):
+    '''show : SHOW CREATE TABLE NAME'''
+
+    p[0] = PShow(p[4])
+
+def p_select(p):
+    '''select : SELECT select_body'''
+
+    p[0] = p[2]
+
+def p_select_body(p):
+    '''select_body : fields FROM NAME
+                   | LPAREN fields RPAREN FROM NAME'''
+
+    fields, name = 0, 0
+    
+    if len(p) == 4:
+
+        fields = 1
+        name = 3
+
+    else:
+
+        fields = 2
+        name = 5
+
+    p[0] = PSelect(p[name])
+    p[0].set_fields(p[fields])
+
+def p_insert(p):
+    '''insert : INSERT insert_body'''
+
+    p[0] = p[2]
+
+
+def p_insert_body(p):
+    '''insert_body : INTO NAME LPAREN fields RPAREN
+                   | INTO NAME VALUES LPAREN fields RPAREN'''
+
+    fields, name = 0, 2
+    p[0] = PInsert(p[name])
+
+    if len(p) == 6:
+        fields = 4
+        
+    else:
+        fields = 5
+
+    p[0].set_fields(p[fields])
+
+def p_fields(p):
+    '''fields : NAME
+              | fields COMMA NAME'''
+
+    field = 0
+
+    if len(p) == 2:
+
+        p[0] = []
+        field = 1
+
+    else:
+
+        p[0] = p[1]
+        field = 3
+
+    p[0].append(p[field])
 
 def p_type(p):
     '''type : int 
