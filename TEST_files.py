@@ -13,35 +13,93 @@ def test_connect_error():
 	with pytest.raises(exc.DBFileException):
 		unexistdatabase.connect()
 
+
 def test_create_table_error():
-	database.create_table("Hello", {"Kek": int})
+	database.create_table("Hello", {"Kek": int, "Lol": str})
 	with pytest.raises(exc.DBTableException):
 		database.create_table("Hello", {"Kek": int})
+
 
 def test_insert():
 	for i in range(10):
 		database.Hello.insert([i], ["Kek"]) 
 		database.Hello.insert([i+10], ["Kek"]) 
 		
+
 def test_select():
 
-	select = database.Hello.select(["*"])
-	assert select.count() == 20
+	select = database.Hello.select("*")
+	assert len(select) == 20
 
-	select = database.Hello.select(["*"], "id < 10")
-	assert select.count() == 10
+	select = database.Hello.select("*", "id < 10")
+	assert len(select) == 10
 
-	select = database.Hello.select(["*"], "Kek%10 == 0 or Kek%5 == 1")
-	assert select.count() == 6	#0, 10, 1, 6, 11, 16
+	select = database.Hello.select("*", "Kek%10 == 0 or Kek%5 == 1")
+	assert len(select) == 6	#0, 10, 1, 6, 11, 16
+
 
 def test_delete():
 
 	database.Hello.delete("id >= 10")
 
-	select = database.Hello.select(["*"])
-	assert select.count() == 10
+	select = database.Hello.select("*")
+	assert len(select) == 10
+
 
 def test_insert_error():
 	with pytest.raises(exc.DBValueException):
 		database.Hello.insert(["12"], ["Kek"]) 
 		database.Hello.insert(["KEKOS"], ["Faaka"]) 
+
+
+def test_insert_elements():
+
+	elements = []
+	cnt = len(database.Hello.select("*"))
+	
+	for i in range(8):
+		row = database.Hello.insert([str(i)+"TEST"], ["Lol"])
+		elements.append(row)
+
+	sel = database.Hello.select("*", "id>={}".format(elements[0].id))
+
+	for i in range(len(sel)):
+		assert sel[i] == elements[i]
+
+
+def test_remove_elements():
+
+	sel = database.Hello.select("*", "id < 3 or id > 25")
+	
+	database.Hello.delete("id >= 3 and id <= 25")
+	sels = database.Hello.select("*")
+
+	for i in range(len(sel)):
+		assert sel[i] == sels[i]
+
+
+def test_push_to_removed():
+
+	sel = database.Hello.select("*", removed=True)
+	cnt = min(5, len(sel))
+	for i in range(cnt):
+		database.Hello.insert(["Kekos"+str(i)], ["Lol"])
+
+	sels = database.Hello.select("*", removed=True)
+	assert len(sels) == len(sel)-cnt
+
+
+def test_update():
+
+	database.Hello.insert([1488, "SASKA"])
+	upd = database.Hello.update([2281488, "HELLOWORLD"], "*", "id == 31")
+	sel = database.Hello.select("*", "id == 31")
+
+	assert upd[0] == sel[0] 
+
+
+def test_clear_table():
+
+	database.Hello.delete()
+	assert len(database.Hello.select("*")) == 0
+

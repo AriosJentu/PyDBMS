@@ -1,15 +1,26 @@
 import consts
 import exceptions as exc
 
-def where(expr, variables):
+def where(expr, variables={}):
 	return bool(
 		eval(
-			expr.lower(), 
+			expr.lower(), {
+				"__builtins__": {
+					"len":len, 
+					"min":min, 
+					"max":max,
+					"int":int,
+					"str":str,
+					"bool":bool
+				}
+			},
 			{
-				v.lower(): variables[v] for v in variables.keys()
+				v.lower(): variables[v] for v in variables.keys() 
+					if type(variables[v]) != type(lambda:1) 
 			}
 		)
 	)
+
 
 def format_items(dictk):
 
@@ -25,6 +36,7 @@ def format_items(dictk):
 					if i[:2] != "__"
 				]
 			)
+
 
 #C-Struct Class
 class Struct:
@@ -51,14 +63,36 @@ class Struct:
 	def __repr__(self):
 		return "<Struct> {" + format_items(self) + "}"
 
+	def __eq__(self, rstruct):
+
+		sk = self.keys()
+		rk = rstruct.keys()
+		ak = set(sk + rk)
+		
+		if len(sk) == len(rk) == len(ak):
+
+			for i in sk:
+				if self[i] != rstruct[i]:
+					return False
+			else:
+				return True
+
+		else:
+			return False
+
+	def __len__(self):
+		return len(self.keys())
+
+
 	def keys(self):
-		return self.__dict__.keys()
+		return list(self.__dict__.keys())
 
 	def values(self):
-		return self.__dict__.values()
+		return list(self.__dict__.values())
 
 	def items(self):
 		return self.__dict__.items()
+
 
 class Select(Struct):
 
@@ -80,6 +114,16 @@ class Select(Struct):
 			"\n\t\t".join([str(i) for i in self.values])
 		) + "\n}"
 
+	def __iter__(self):
+		for i in self.values:
+			yield i
+
+	def __getitem__(self, i):
+		return self.values[i]
+
+	def __len__(self):
+		return self.count()
+
 
 
 class Type(Struct):
@@ -96,6 +140,7 @@ class Type(Struct):
 
 	def __str__(self):
 		return self.name
+
 
 Types = Struct({
 	"int": Type("int", consts.intsize, int, "integer"),
@@ -166,10 +211,11 @@ class DataBaseMeta(Struct):
 	def __str__(self):
 		return "<DataBase> {tables count: " + str(self.tblcount) + "}"
 
+
 #Meta information about table
 class TableMeta(Struct):
 
-	SIZE = 32 + 22 + consts.fieldscount*24
+	SIZE = 32 + 22 + consts.fieldscount*24 + 6
 
 	def __init__(self):
 		
@@ -310,7 +356,7 @@ class TableMeta(Struct):
 			return self.fields
 
 		for i in fields:
-			if i in self.fields or i == "__rowid__":
+			if i in self.fields or i in consts.bounded:
 				vals.append(i)
 
 		return vals
@@ -373,7 +419,7 @@ class TableMeta(Struct):
 			yield page
 
 
-	def irows(self, removed=False):
+	def irows(self, removed=False, include_updated=False):
 
 		#Returning almost unreaded rows (only indexes)
 		if removed:
@@ -388,7 +434,11 @@ class TableMeta(Struct):
 			row._read_indexes()
 			index = row.next
 
+			if row.available == 3 and not include_updated:
+				continue
+
 			yield row
+
 
 	def get_rows(self, removed=False, fields=[]):
 
@@ -399,11 +449,7 @@ class TableMeta(Struct):
 
 		return rows
 
-
-	def insert(self, values=[], fields=[]):
-
-		fields = self._get_valid_fields(fields, replace=True)
-		self._check_values_for_fields(fields, values)
+	def _get_free_row(self):
 
 		if self.lastrmvd:
 			
@@ -426,31 +472,96 @@ class TableMeta(Struct):
 			pos, page = self._get_write_position()
 			page.count += 1
 			page._update_to_file()
-		
-		if not self.firstelmnt:
-			self.firstelmnt = pos
-		else:
-			prevrow = Row(self.lastelmnt)
-			prevrow.tblmeta = self
-			prevrow._read_indexes()
-			prevrow.next = pos
-			prevrow._write_indexes()
 
-		row = Row(pos)
-		row.tblmeta = self
-		row.id = self.count
-		row.available = 1
-		row.next = 0
-		row.previous = self.lastelmnt
-		row.values = Struct({v:values[i] for i, v in enumerate(fields)})
-		row._write_to_file()
+		return pos
+
+
+	def insert(self, values=[], fields=[]):
+
+		row, pos = self._insert_after(values, fields)
 
 		self.count += 1
 		self.lastelmnt = pos
 		self._update_pages()
 
+		return row
+
+	def _insert_after(self, values=[], fields=[], after_index=-1):
+
+		fields = self._get_valid_fields(fields, replace=True)
+		self._check_values_for_fields(fields, values)
+
+		pos = self._get_free_row()
+		savednext = 0
+
+		if after_index == -1:
+			after_index = self.lastelmnt
+
+
+		if self.firstelmnt == 0: 
+		
+			self.firstelmnt = pos
+			self._update_pages()
+		
+
+		if after_index != 0:
+
+			prevrow = Row(after_index)
+			prevrow.tblmeta = self
+			prevrow._read_indexes()
+
+			savednext = prevrow.next
+			prevrow.next = pos
+			
+			prevrow._write_indexes()
+
+
+		if savednext != 0:
+
+			nextrow = Row(savednext)
+			nextrow.tblmeta = self
+			nextrow._read_indexes()
+			nextrow.previous = pos
+			nextrow._write_indexes()
+
+
+		row = Row(pos)
+		row.tblmeta = self
+		row.id = self.count
+		row.available = 1
+		row.next = savednext
+		row.previous = after_index
+		row.values = Struct({v:values[i] for i, v in enumerate(fields)})
+		row._write_to_file()
+
+		return row, pos
+
+	def _copy_row(self, rowindex=-1, upd_state=False):
+
+		if rowindex == -1:
+			rowindex = self.lastelmnt
+
+		copying = Row(rowindex)
+		copying.tblmeta = self
+		copying._read_from_file()
+		if upd_state:
+			copying.available = 3
+			copying._write_indexes()
+
+		keys = []
+		vals = []
+		for i, v in copying.values.items():
+			if i not in consts.bounded:
+				keys.append(i)
+				vals.append(v)
+
+		return self._insert_after(vals, keys, rowindex)
+
 
 	def select(self, fields=[], expr="1", removed=False):
+
+		if type(fields) != list:
+			fields = [fields]
 
 		fields = self._get_valid_fields(fields)
 		selects = Select(fields)
@@ -470,12 +581,15 @@ class TableMeta(Struct):
 		fields = self._get_valid_fields(fields)
 		self._check_values_for_fields(fields, values)
 
+		updated = []
 		for i in self.get_rows():
 
 			if where(expr, i.values):
 				i._select_by_fields(fields)
 				i._update_by_fields(fields, values)
+				updated.append(i)
 
+		return updated
 
 
 	def delete(self, expr="1"):
@@ -772,14 +886,21 @@ class Row(Struct):
 	def info(self):
 
 		info = "\nROW'S META INFORMATION:"
-		#meta = "\nTable meta at:\t{}".format(self.tblmeta.index)		
-		#prev = "\nLocated at:\t{}".format(self.index)		
-		#prev = "\nPrevious at:\t{}".format(self.previous)		
-		#snext = "\nNext at:\t\t{}".format(self.next)		
-		#count = "\nCurrent count:\t{}".format(self.count)
+		meta = "\nTable meta at:\t\t{}".format(self.tblmeta.index)		
+		indx = "\nRow located at:\t\t{}".format(self.index)		
+		iden = "\nRow ID:\t\t\t{}".format(self.id)		
+		aval = "\nRow Status:\t\t{}".format(
+			{
+				self.available == 0: "Not Available",
+				self.available == 1: "Available",
+				self.available == 2: "Marked as Removed"
+			}[True]
+		)		
+		prev = "\nPrevious Row at:\t{}".format(self.previous)		
+		nxtr = "\nNext Row at:\t\t{}".format(self.next)		
+		vals = "\nValues:\t\t\t" + format_items(self.values)		
 
-		#return info + meta + prev + snext + count	
-		return info
+		return info + meta + indx + iden + aval + prev + nxtr + vals
 
 	def __str__(self):
 		return "<Row> {from: " + str(self.tblmeta.index) + \
@@ -791,3 +912,17 @@ class Row(Struct):
 			" : " + format_items(self.values) + \
 		"}"
 
+	def __eq__(self, row):
+		svals = self.values
+		rvals = row.values
+		
+		svals["next"] = 0
+		rvals["next"] = 0
+
+		for i in svals.keys():
+			if i in rvals.keys():
+				if svals[i] != rvals[i]:
+					return False
+
+		else:
+			return True

@@ -8,3 +8,4 @@ intsize = 4
 strsize = 256
 maxsize = 512
 pagesize = 512
+bounded = ["id", "__rowid__"]
