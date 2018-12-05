@@ -1,0 +1,939 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> start
+Rule 1     start -> create
+Rule 2     start -> show
+Rule 3     start -> select
+Rule 4     start -> insert
+Rule 5     create -> CREATE create_body
+Rule 6     create_body -> TABLE NAME LPAREN values RPAREN
+Rule 7     values -> NAME type
+Rule 8     values -> values COMMA NAME type
+Rule 9     show -> SHOW CREATE TABLE NAME
+Rule 10    select -> SELECT select_body
+Rule 11    select -> SELECT select_body where_body
+Rule 12    select_body -> fields FROM NAME
+Rule 13    select_body -> LPAREN fields RPAREN FROM NAME
+Rule 14    where_body -> WHERE where_condition
+Rule 15    where_condition -> field operator statement
+Rule 16    where_condition -> where_condition connecting_operator field operator statement
+Rule 17    field -> NAME
+Rule 18    connecting_operator -> OR
+Rule 19    connecting_operator -> NOR
+Rule 20    connecting_operator -> NAND
+Rule 21    connecting_operator -> AND
+Rule 22    operator -> EQUAL
+Rule 23    operator -> NOT_EQUAL
+Rule 24    operator -> GREATER_THAN
+Rule 25    operator -> LESS_THAN
+Rule 26    operator -> GREATER_THAN_OR_EQUAL
+Rule 27    operator -> LESS_THAN_OR_EQUAL
+Rule 28    operator -> BETWEEN
+Rule 29    operator -> LIKE
+Rule 30    operator -> IN
+Rule 31    operator -> OR
+Rule 32    operator -> NOR
+Rule 33    operator -> NOT
+Rule 34    operator -> NAND
+Rule 35    operator -> AND
+Rule 36    operator -> PLUS
+Rule 37    operator -> MINUS
+Rule 38    operator -> MUL
+Rule 39    operator -> TRUE_DIV
+Rule 40    operator -> FLOOR_DIV
+Rule 41    operator -> PERCENT
+Rule 42    operator -> POWER
+Rule 43    statement -> NAME
+Rule 44    insert -> INSERT insert_body
+Rule 45    insert_body -> INTO NAME LPAREN fields RPAREN
+Rule 46    insert_body -> INTO NAME VALUES LPAREN fields RPAREN
+Rule 47    fields -> NAME
+Rule 48    fields -> fields COMMA NAME
+Rule 49    type -> int
+Rule 50    type -> str
+Rule 51    type -> bol
+
+Terminals, with rules where they appear
+
+AND                  : 21 35
+BETWEEN              : 28
+COMMA                : 8 48
+CREATE               : 5 9
+EQUAL                : 22
+FLOOR_DIV            : 40
+FROM                 : 12 13
+GREATER_THAN         : 24
+GREATER_THAN_OR_EQUAL : 26
+IN                   : 30
+INSERT               : 44
+INTO                 : 45 46
+LESS_THAN            : 25
+LESS_THAN_OR_EQUAL   : 27
+LIKE                 : 29
+LPAREN               : 6 13 45 46
+MINUS                : 37
+MUL                  : 38
+NAME                 : 6 7 8 9 12 13 17 43 45 46 47 48
+NAND                 : 20 34
+NOR                  : 19 32
+NOT                  : 33
+NOT_EQUAL            : 23
+OR                   : 18 31
+PERCENT              : 41
+PLUS                 : 36
+POWER                : 42
+RPAREN               : 6 13 45 46
+SELECT               : 10 11
+SHOW                 : 9
+TABLE                : 6 9
+TRUE_DIV             : 39
+VALUES               : 46
+WHERE                : 14
+bol                  : 51
+error                : 
+int                  : 49
+str                  : 50
+
+Nonterminals, with rules where they appear
+
+connecting_operator  : 16
+create               : 1
+create_body          : 5
+field                : 15 16
+fields               : 12 13 45 46 48
+insert               : 4
+insert_body          : 44
+operator             : 15 16
+select               : 3
+select_body          : 10 11
+show                 : 2
+start                : 0
+statement            : 15 16
+type                 : 7 8
+values               : 6 8
+where_body           : 11
+where_condition      : 14 16
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . start
+    (1) start -> . create
+    (2) start -> . show
+    (3) start -> . select
+    (4) start -> . insert
+    (5) create -> . CREATE create_body
+    (9) show -> . SHOW CREATE TABLE NAME
+    (10) select -> . SELECT select_body
+    (11) select -> . SELECT select_body where_body
+    (44) insert -> . INSERT insert_body
+
+    CREATE          shift and go to state 6
+    SHOW            shift and go to state 7
+    SELECT          shift and go to state 8
+    INSERT          shift and go to state 9
+
+    start                          shift and go to state 1
+    create                         shift and go to state 2
+    show                           shift and go to state 3
+    select                         shift and go to state 4
+    insert                         shift and go to state 5
+
+state 1
+
+    (0) S' -> start .
+
+
+
+state 2
+
+    (1) start -> create .
+
+    $end            reduce using rule 1 (start -> create .)
+
+
+state 3
+
+    (2) start -> show .
+
+    $end            reduce using rule 2 (start -> show .)
+
+
+state 4
+
+    (3) start -> select .
+
+    $end            reduce using rule 3 (start -> select .)
+
+
+state 5
+
+    (4) start -> insert .
+
+    $end            reduce using rule 4 (start -> insert .)
+
+
+state 6
+
+    (5) create -> CREATE . create_body
+    (6) create_body -> . TABLE NAME LPAREN values RPAREN
+
+    TABLE           shift and go to state 11
+
+    create_body                    shift and go to state 10
+
+state 7
+
+    (9) show -> SHOW . CREATE TABLE NAME
+
+    CREATE          shift and go to state 12
+
+
+state 8
+
+    (10) select -> SELECT . select_body
+    (11) select -> SELECT . select_body where_body
+    (12) select_body -> . fields FROM NAME
+    (13) select_body -> . LPAREN fields RPAREN FROM NAME
+    (47) fields -> . NAME
+    (48) fields -> . fields COMMA NAME
+
+    LPAREN          shift and go to state 16
+    NAME            shift and go to state 15
+
+    select_body                    shift and go to state 13
+    fields                         shift and go to state 14
+
+state 9
+
+    (44) insert -> INSERT . insert_body
+    (45) insert_body -> . INTO NAME LPAREN fields RPAREN
+    (46) insert_body -> . INTO NAME VALUES LPAREN fields RPAREN
+
+    INTO            shift and go to state 18
+
+    insert_body                    shift and go to state 17
+
+state 10
+
+    (5) create -> CREATE create_body .
+
+    $end            reduce using rule 5 (create -> CREATE create_body .)
+
+
+state 11
+
+    (6) create_body -> TABLE . NAME LPAREN values RPAREN
+
+    NAME            shift and go to state 19
+
+
+state 12
+
+    (9) show -> SHOW CREATE . TABLE NAME
+
+    TABLE           shift and go to state 20
+
+
+state 13
+
+    (10) select -> SELECT select_body .
+    (11) select -> SELECT select_body . where_body
+    (14) where_body -> . WHERE where_condition
+
+    $end            reduce using rule 10 (select -> SELECT select_body .)
+    WHERE           shift and go to state 22
+
+    where_body                     shift and go to state 21
+
+state 14
+
+    (12) select_body -> fields . FROM NAME
+    (48) fields -> fields . COMMA NAME
+
+    FROM            shift and go to state 23
+    COMMA           shift and go to state 24
+
+
+state 15
+
+    (47) fields -> NAME .
+
+    FROM            reduce using rule 47 (fields -> NAME .)
+    COMMA           reduce using rule 47 (fields -> NAME .)
+    RPAREN          reduce using rule 47 (fields -> NAME .)
+
+
+state 16
+
+    (13) select_body -> LPAREN . fields RPAREN FROM NAME
+    (47) fields -> . NAME
+    (48) fields -> . fields COMMA NAME
+
+    NAME            shift and go to state 15
+
+    fields                         shift and go to state 25
+
+state 17
+
+    (44) insert -> INSERT insert_body .
+
+    $end            reduce using rule 44 (insert -> INSERT insert_body .)
+
+
+state 18
+
+    (45) insert_body -> INTO . NAME LPAREN fields RPAREN
+    (46) insert_body -> INTO . NAME VALUES LPAREN fields RPAREN
+
+    NAME            shift and go to state 26
+
+
+state 19
+
+    (6) create_body -> TABLE NAME . LPAREN values RPAREN
+
+    LPAREN          shift and go to state 27
+
+
+state 20
+
+    (9) show -> SHOW CREATE TABLE . NAME
+
+    NAME            shift and go to state 28
+
+
+state 21
+
+    (11) select -> SELECT select_body where_body .
+
+    $end            reduce using rule 11 (select -> SELECT select_body where_body .)
+
+
+state 22
+
+    (14) where_body -> WHERE . where_condition
+    (15) where_condition -> . field operator statement
+    (16) where_condition -> . where_condition connecting_operator field operator statement
+    (17) field -> . NAME
+
+    NAME            shift and go to state 31
+
+    where_condition                shift and go to state 29
+    field                          shift and go to state 30
+
+state 23
+
+    (12) select_body -> fields FROM . NAME
+
+    NAME            shift and go to state 32
+
+
+state 24
+
+    (48) fields -> fields COMMA . NAME
+
+    NAME            shift and go to state 33
+
+
+state 25
+
+    (13) select_body -> LPAREN fields . RPAREN FROM NAME
+    (48) fields -> fields . COMMA NAME
+
+    RPAREN          shift and go to state 34
+    COMMA           shift and go to state 24
+
+
+state 26
+
+    (45) insert_body -> INTO NAME . LPAREN fields RPAREN
+    (46) insert_body -> INTO NAME . VALUES LPAREN fields RPAREN
+
+    LPAREN          shift and go to state 35
+    VALUES          shift and go to state 36
+
+
+state 27
+
+    (6) create_body -> TABLE NAME LPAREN . values RPAREN
+    (7) values -> . NAME type
+    (8) values -> . values COMMA NAME type
+
+    NAME            shift and go to state 37
+
+    values                         shift and go to state 38
+
+state 28
+
+    (9) show -> SHOW CREATE TABLE NAME .
+
+    $end            reduce using rule 9 (show -> SHOW CREATE TABLE NAME .)
+
+
+state 29
+
+    (14) where_body -> WHERE where_condition .
+    (16) where_condition -> where_condition . connecting_operator field operator statement
+    (18) connecting_operator -> . OR
+    (19) connecting_operator -> . NOR
+    (20) connecting_operator -> . NAND
+    (21) connecting_operator -> . AND
+
+    $end            reduce using rule 14 (where_body -> WHERE where_condition .)
+    OR              shift and go to state 40
+    NOR             shift and go to state 41
+    NAND            shift and go to state 42
+    AND             shift and go to state 43
+
+    connecting_operator            shift and go to state 39
+
+state 30
+
+    (15) where_condition -> field . operator statement
+    (22) operator -> . EQUAL
+    (23) operator -> . NOT_EQUAL
+    (24) operator -> . GREATER_THAN
+    (25) operator -> . LESS_THAN
+    (26) operator -> . GREATER_THAN_OR_EQUAL
+    (27) operator -> . LESS_THAN_OR_EQUAL
+    (28) operator -> . BETWEEN
+    (29) operator -> . LIKE
+    (30) operator -> . IN
+    (31) operator -> . OR
+    (32) operator -> . NOR
+    (33) operator -> . NOT
+    (34) operator -> . NAND
+    (35) operator -> . AND
+    (36) operator -> . PLUS
+    (37) operator -> . MINUS
+    (38) operator -> . MUL
+    (39) operator -> . TRUE_DIV
+    (40) operator -> . FLOOR_DIV
+    (41) operator -> . PERCENT
+    (42) operator -> . POWER
+
+    EQUAL           shift and go to state 45
+    NOT_EQUAL       shift and go to state 46
+    GREATER_THAN    shift and go to state 47
+    LESS_THAN       shift and go to state 48
+    GREATER_THAN_OR_EQUAL shift and go to state 49
+    LESS_THAN_OR_EQUAL shift and go to state 50
+    BETWEEN         shift and go to state 51
+    LIKE            shift and go to state 52
+    IN              shift and go to state 53
+    OR              shift and go to state 54
+    NOR             shift and go to state 55
+    NOT             shift and go to state 56
+    NAND            shift and go to state 57
+    AND             shift and go to state 58
+    PLUS            shift and go to state 59
+    MINUS           shift and go to state 60
+    MUL             shift and go to state 61
+    TRUE_DIV        shift and go to state 62
+    FLOOR_DIV       shift and go to state 63
+    PERCENT         shift and go to state 64
+    POWER           shift and go to state 65
+
+    operator                       shift and go to state 44
+
+state 31
+
+    (17) field -> NAME .
+
+    EQUAL           reduce using rule 17 (field -> NAME .)
+    NOT_EQUAL       reduce using rule 17 (field -> NAME .)
+    GREATER_THAN    reduce using rule 17 (field -> NAME .)
+    LESS_THAN       reduce using rule 17 (field -> NAME .)
+    GREATER_THAN_OR_EQUAL reduce using rule 17 (field -> NAME .)
+    LESS_THAN_OR_EQUAL reduce using rule 17 (field -> NAME .)
+    BETWEEN         reduce using rule 17 (field -> NAME .)
+    LIKE            reduce using rule 17 (field -> NAME .)
+    IN              reduce using rule 17 (field -> NAME .)
+    OR              reduce using rule 17 (field -> NAME .)
+    NOR             reduce using rule 17 (field -> NAME .)
+    NOT             reduce using rule 17 (field -> NAME .)
+    NAND            reduce using rule 17 (field -> NAME .)
+    AND             reduce using rule 17 (field -> NAME .)
+    PLUS            reduce using rule 17 (field -> NAME .)
+    MINUS           reduce using rule 17 (field -> NAME .)
+    MUL             reduce using rule 17 (field -> NAME .)
+    TRUE_DIV        reduce using rule 17 (field -> NAME .)
+    FLOOR_DIV       reduce using rule 17 (field -> NAME .)
+    PERCENT         reduce using rule 17 (field -> NAME .)
+    POWER           reduce using rule 17 (field -> NAME .)
+
+
+state 32
+
+    (12) select_body -> fields FROM NAME .
+
+    WHERE           reduce using rule 12 (select_body -> fields FROM NAME .)
+    $end            reduce using rule 12 (select_body -> fields FROM NAME .)
+
+
+state 33
+
+    (48) fields -> fields COMMA NAME .
+
+    FROM            reduce using rule 48 (fields -> fields COMMA NAME .)
+    COMMA           reduce using rule 48 (fields -> fields COMMA NAME .)
+    RPAREN          reduce using rule 48 (fields -> fields COMMA NAME .)
+
+
+state 34
+
+    (13) select_body -> LPAREN fields RPAREN . FROM NAME
+
+    FROM            shift and go to state 66
+
+
+state 35
+
+    (45) insert_body -> INTO NAME LPAREN . fields RPAREN
+    (47) fields -> . NAME
+    (48) fields -> . fields COMMA NAME
+
+    NAME            shift and go to state 15
+
+    fields                         shift and go to state 67
+
+state 36
+
+    (46) insert_body -> INTO NAME VALUES . LPAREN fields RPAREN
+
+    LPAREN          shift and go to state 68
+
+
+state 37
+
+    (7) values -> NAME . type
+    (49) type -> . int
+    (50) type -> . str
+    (51) type -> . bol
+
+    int             shift and go to state 70
+    str             shift and go to state 71
+    bol             shift and go to state 72
+
+    type                           shift and go to state 69
+
+state 38
+
+    (6) create_body -> TABLE NAME LPAREN values . RPAREN
+    (8) values -> values . COMMA NAME type
+
+    RPAREN          shift and go to state 73
+    COMMA           shift and go to state 74
+
+
+state 39
+
+    (16) where_condition -> where_condition connecting_operator . field operator statement
+    (17) field -> . NAME
+
+    NAME            shift and go to state 31
+
+    field                          shift and go to state 75
+
+state 40
+
+    (18) connecting_operator -> OR .
+
+    NAME            reduce using rule 18 (connecting_operator -> OR .)
+
+
+state 41
+
+    (19) connecting_operator -> NOR .
+
+    NAME            reduce using rule 19 (connecting_operator -> NOR .)
+
+
+state 42
+
+    (20) connecting_operator -> NAND .
+
+    NAME            reduce using rule 20 (connecting_operator -> NAND .)
+
+
+state 43
+
+    (21) connecting_operator -> AND .
+
+    NAME            reduce using rule 21 (connecting_operator -> AND .)
+
+
+state 44
+
+    (15) where_condition -> field operator . statement
+    (43) statement -> . NAME
+
+    NAME            shift and go to state 77
+
+    statement                      shift and go to state 76
+
+state 45
+
+    (22) operator -> EQUAL .
+
+    NAME            reduce using rule 22 (operator -> EQUAL .)
+
+
+state 46
+
+    (23) operator -> NOT_EQUAL .
+
+    NAME            reduce using rule 23 (operator -> NOT_EQUAL .)
+
+
+state 47
+
+    (24) operator -> GREATER_THAN .
+
+    NAME            reduce using rule 24 (operator -> GREATER_THAN .)
+
+
+state 48
+
+    (25) operator -> LESS_THAN .
+
+    NAME            reduce using rule 25 (operator -> LESS_THAN .)
+
+
+state 49
+
+    (26) operator -> GREATER_THAN_OR_EQUAL .
+
+    NAME            reduce using rule 26 (operator -> GREATER_THAN_OR_EQUAL .)
+
+
+state 50
+
+    (27) operator -> LESS_THAN_OR_EQUAL .
+
+    NAME            reduce using rule 27 (operator -> LESS_THAN_OR_EQUAL .)
+
+
+state 51
+
+    (28) operator -> BETWEEN .
+
+    NAME            reduce using rule 28 (operator -> BETWEEN .)
+
+
+state 52
+
+    (29) operator -> LIKE .
+
+    NAME            reduce using rule 29 (operator -> LIKE .)
+
+
+state 53
+
+    (30) operator -> IN .
+
+    NAME            reduce using rule 30 (operator -> IN .)
+
+
+state 54
+
+    (31) operator -> OR .
+
+    NAME            reduce using rule 31 (operator -> OR .)
+
+
+state 55
+
+    (32) operator -> NOR .
+
+    NAME            reduce using rule 32 (operator -> NOR .)
+
+
+state 56
+
+    (33) operator -> NOT .
+
+    NAME            reduce using rule 33 (operator -> NOT .)
+
+
+state 57
+
+    (34) operator -> NAND .
+
+    NAME            reduce using rule 34 (operator -> NAND .)
+
+
+state 58
+
+    (35) operator -> AND .
+
+    NAME            reduce using rule 35 (operator -> AND .)
+
+
+state 59
+
+    (36) operator -> PLUS .
+
+    NAME            reduce using rule 36 (operator -> PLUS .)
+
+
+state 60
+
+    (37) operator -> MINUS .
+
+    NAME            reduce using rule 37 (operator -> MINUS .)
+
+
+state 61
+
+    (38) operator -> MUL .
+
+    NAME            reduce using rule 38 (operator -> MUL .)
+
+
+state 62
+
+    (39) operator -> TRUE_DIV .
+
+    NAME            reduce using rule 39 (operator -> TRUE_DIV .)
+
+
+state 63
+
+    (40) operator -> FLOOR_DIV .
+
+    NAME            reduce using rule 40 (operator -> FLOOR_DIV .)
+
+
+state 64
+
+    (41) operator -> PERCENT .
+
+    NAME            reduce using rule 41 (operator -> PERCENT .)
+
+
+state 65
+
+    (42) operator -> POWER .
+
+    NAME            reduce using rule 42 (operator -> POWER .)
+
+
+state 66
+
+    (13) select_body -> LPAREN fields RPAREN FROM . NAME
+
+    NAME            shift and go to state 78
+
+
+state 67
+
+    (45) insert_body -> INTO NAME LPAREN fields . RPAREN
+    (48) fields -> fields . COMMA NAME
+
+    RPAREN          shift and go to state 79
+    COMMA           shift and go to state 24
+
+
+state 68
+
+    (46) insert_body -> INTO NAME VALUES LPAREN . fields RPAREN
+    (47) fields -> . NAME
+    (48) fields -> . fields COMMA NAME
+
+    NAME            shift and go to state 15
+
+    fields                         shift and go to state 80
+
+state 69
+
+    (7) values -> NAME type .
+
+    RPAREN          reduce using rule 7 (values -> NAME type .)
+    COMMA           reduce using rule 7 (values -> NAME type .)
+
+
+state 70
+
+    (49) type -> int .
+
+    RPAREN          reduce using rule 49 (type -> int .)
+    COMMA           reduce using rule 49 (type -> int .)
+
+
+state 71
+
+    (50) type -> str .
+
+    RPAREN          reduce using rule 50 (type -> str .)
+    COMMA           reduce using rule 50 (type -> str .)
+
+
+state 72
+
+    (51) type -> bol .
+
+    RPAREN          reduce using rule 51 (type -> bol .)
+    COMMA           reduce using rule 51 (type -> bol .)
+
+
+state 73
+
+    (6) create_body -> TABLE NAME LPAREN values RPAREN .
+
+    $end            reduce using rule 6 (create_body -> TABLE NAME LPAREN values RPAREN .)
+
+
+state 74
+
+    (8) values -> values COMMA . NAME type
+
+    NAME            shift and go to state 81
+
+
+state 75
+
+    (16) where_condition -> where_condition connecting_operator field . operator statement
+    (22) operator -> . EQUAL
+    (23) operator -> . NOT_EQUAL
+    (24) operator -> . GREATER_THAN
+    (25) operator -> . LESS_THAN
+    (26) operator -> . GREATER_THAN_OR_EQUAL
+    (27) operator -> . LESS_THAN_OR_EQUAL
+    (28) operator -> . BETWEEN
+    (29) operator -> . LIKE
+    (30) operator -> . IN
+    (31) operator -> . OR
+    (32) operator -> . NOR
+    (33) operator -> . NOT
+    (34) operator -> . NAND
+    (35) operator -> . AND
+    (36) operator -> . PLUS
+    (37) operator -> . MINUS
+    (38) operator -> . MUL
+    (39) operator -> . TRUE_DIV
+    (40) operator -> . FLOOR_DIV
+    (41) operator -> . PERCENT
+    (42) operator -> . POWER
+
+    EQUAL           shift and go to state 45
+    NOT_EQUAL       shift and go to state 46
+    GREATER_THAN    shift and go to state 47
+    LESS_THAN       shift and go to state 48
+    GREATER_THAN_OR_EQUAL shift and go to state 49
+    LESS_THAN_OR_EQUAL shift and go to state 50
+    BETWEEN         shift and go to state 51
+    LIKE            shift and go to state 52
+    IN              shift and go to state 53
+    OR              shift and go to state 54
+    NOR             shift and go to state 55
+    NOT             shift and go to state 56
+    NAND            shift and go to state 57
+    AND             shift and go to state 58
+    PLUS            shift and go to state 59
+    MINUS           shift and go to state 60
+    MUL             shift and go to state 61
+    TRUE_DIV        shift and go to state 62
+    FLOOR_DIV       shift and go to state 63
+    PERCENT         shift and go to state 64
+    POWER           shift and go to state 65
+
+    operator                       shift and go to state 82
+
+state 76
+
+    (15) where_condition -> field operator statement .
+
+    OR              reduce using rule 15 (where_condition -> field operator statement .)
+    NOR             reduce using rule 15 (where_condition -> field operator statement .)
+    NAND            reduce using rule 15 (where_condition -> field operator statement .)
+    AND             reduce using rule 15 (where_condition -> field operator statement .)
+    $end            reduce using rule 15 (where_condition -> field operator statement .)
+
+
+state 77
+
+    (43) statement -> NAME .
+
+    OR              reduce using rule 43 (statement -> NAME .)
+    NOR             reduce using rule 43 (statement -> NAME .)
+    NAND            reduce using rule 43 (statement -> NAME .)
+    AND             reduce using rule 43 (statement -> NAME .)
+    $end            reduce using rule 43 (statement -> NAME .)
+
+
+state 78
+
+    (13) select_body -> LPAREN fields RPAREN FROM NAME .
+
+    WHERE           reduce using rule 13 (select_body -> LPAREN fields RPAREN FROM NAME .)
+    $end            reduce using rule 13 (select_body -> LPAREN fields RPAREN FROM NAME .)
+
+
+state 79
+
+    (45) insert_body -> INTO NAME LPAREN fields RPAREN .
+
+    $end            reduce using rule 45 (insert_body -> INTO NAME LPAREN fields RPAREN .)
+
+
+state 80
+
+    (46) insert_body -> INTO NAME VALUES LPAREN fields . RPAREN
+    (48) fields -> fields . COMMA NAME
+
+    RPAREN          shift and go to state 83
+    COMMA           shift and go to state 24
+
+
+state 81
+
+    (8) values -> values COMMA NAME . type
+    (49) type -> . int
+    (50) type -> . str
+    (51) type -> . bol
+
+    int             shift and go to state 70
+    str             shift and go to state 71
+    bol             shift and go to state 72
+
+    type                           shift and go to state 84
+
+state 82
+
+    (16) where_condition -> where_condition connecting_operator field operator . statement
+    (43) statement -> . NAME
+
+    NAME            shift and go to state 77
+
+    statement                      shift and go to state 85
+
+state 83
+
+    (46) insert_body -> INTO NAME VALUES LPAREN fields RPAREN .
+
+    $end            reduce using rule 46 (insert_body -> INTO NAME VALUES LPAREN fields RPAREN .)
+
+
+state 84
+
+    (8) values -> values COMMA NAME type .
+
+    RPAREN          reduce using rule 8 (values -> values COMMA NAME type .)
+    COMMA           reduce using rule 8 (values -> values COMMA NAME type .)
+
+
+state 85
+
+    (16) where_condition -> where_condition connecting_operator field operator statement .
+
+    OR              reduce using rule 16 (where_condition -> where_condition connecting_operator field operator statement .)
+    NOR             reduce using rule 16 (where_condition -> where_condition connecting_operator field operator statement .)
+    NAND            reduce using rule 16 (where_condition -> where_condition connecting_operator field operator statement .)
+    AND             reduce using rule 16 (where_condition -> where_condition connecting_operator field operator statement .)
+    $end            reduce using rule 16 (where_condition -> where_condition connecting_operator field operator statement .)
+
