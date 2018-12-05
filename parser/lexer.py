@@ -6,11 +6,18 @@ import re
 
 tokens = (
 
-	'CREATE', 'SHOW', 'SELECT', 'INSERT', 'FROM', 'INTO', 'TABLE','NAME', 'VALUES','RPAREN', 'LPAREN', 'COMMA','VAR', 'int', 'str', 'bol'
-
+	'CREATE', 'SHOW', 'SELECT', 'INSERT', 
+    'FROM', 'INTO', 'TABLE', 'WHERE',
+    'NAME', 'VALUES', 
+    'RPAREN', 'LPAREN', 'COMMA', 
+    'int', 'str', 'bol',
+    'EQUAL', 'NOT_EQUAL', 'GREATER_THAN', 'LESS_THAN', 
+    'GREATER_THAN_OR_EQUAL', 'LESS_THAN_OR_EQUAL', 'BETWEEN', 
+    'LIKE', 'IN', 'OR', 'NOR', 'NOT', 'AND', 'NAND', 
+    'PLUS', 'MINUS', 'MUL', 'TRUE_DIV', 'FLOOR_DIV','PERCENT', 'POWER'
 )
-	
-ident = r'[a-zA-Z_][a-zA-Z0-9_]\w*'
+	                       
+ident = r'[a-z a-zA-Z0-9_ \- \+]\w*'
 
 t_CREATE = r'CREATE'
 t_SHOW = r'SHOW'
@@ -20,11 +27,35 @@ t_INSERT = r'INSERT'
 t_TABLE = r'TABLE'
 t_FROM = r'FROM'
 t_INTO = r'INTO'
+t_WHERE = r'WHERE'
+
 t_VALUES = r'VALUES'
 
 t_RPAREN = r'\)'
 t_LPAREN = r'\('
 t_COMMA = r','
+
+t_EQUAL = r'\=\=|\=|"IS"' 
+t_NOT_EQUAL = r'\!=|\<>'
+t_GREATER_THAN = r'\>'
+t_LESS_THAN = '\<'
+t_GREATER_THAN_OR_EQUAL = r'\>='
+t_LESS_THAN_OR_EQUAL = r'\<='
+t_BETWEEN = r'BETWEEN'
+t_LIKE = r'LIKE'
+t_IN = r'IN'
+t_OR = 'OR'#+
+t_NOR = 'NOR'#+
+t_NOT = '\!|NOT'##
+t_NAND = 'NAND'#+
+t_AND = 'AND'#+
+t_PLUS = '\+'##
+t_MINUS = '\-'##
+t_MUL = '\*'
+t_TRUE_DIV = '\/' 
+t_FLOOR_DIV = '\/\/'
+t_PERCENT = '\%'
+t_POWER = '\^|\*\*'##
 
 
 @TOKEN(ident)
@@ -34,45 +65,85 @@ def t_NAME(t):
     if (t.value.upper() == 'CREATE'):
         t.type = 'CREATE'
 
-    if(t.value.upper() == 'SHOW'):
+    elif (t.value.upper() == 'SHOW'):
         t.type = 'SHOW'
 
-    if(t.value.upper() == 'SELECT'):
+    elif (t.value.upper() == 'SELECT'):
         t.type = 'SELECT'
 
-    if(t.value.upper() == 'INSERT'):
+    elif (t.value.upper() == 'INSERT'):
         t.type = 'INSERT'
 
-    if (t.value.upper() == 'TABLE'):
+
+    elif (t.value.upper() == 'TABLE'):
         t.type = 'TABLE'
   
-    if (t.value.upper() == 'FROM'):
+    elif (t.value.upper() == 'FROM'):
         t.type = 'FROM'
 
-    if (t.value.upper() == 'INTO'):
+    elif (t.value.upper() == 'INTO'):
         t.type = 'INTO'
 
-    if (t.value.upper() == 'VALUES'):
+    elif(t.value.upper() == 'WHERE'):
+        t.type = 'WHERE'
+
+
+    elif (t.value.upper() == 'VALUES'):
         t.type = 'VALUES'
 
-    if (
+
+    elif (
             t.value.lower() == 'int' or
             t.value.lower() == 'integer'
         ):
         t.type = 'int'
 
-    if (
+    elif (
             t.value.lower() == 'bol' or
             t.value.lower() == 'bool'
         ):
         t.type = 'bol'
 
-    if (
+    elif (
             t.value.lower() == 'str' or
             t.value.lower() == 'string'
         ):
         t.type = 'str'    
-        
+    
+
+    elif (t.value.upper() == 'BETWEEN'):
+        t.type = 'BETWEEN'
+
+    elif (t.value.upper() == 'LIKE'):
+        t.type = 'LIKE'
+
+    elif (t.value.upper() == 'IN'):
+        t.type = 'IN'
+
+    elif (t.value.upper() == 'IS'):
+        t.type = 'EQUAL'
+
+    elif (t.value.upper() == 'OR'):
+        t.type = 'OR'
+
+    elif (t.value.upper() == 'NOR'):
+        t.type = 'NOR'
+
+    elif (t.value.upper() == 'NOT'):
+        t.type = 'NOT'
+
+    elif (t.value.upper() == 'NAND'):
+        t.type = 'NAND'
+
+    elif (t.value.upper() == 'AND'):
+        t.type = 'AND'
+
+    elif (t.value == '+'):
+        t.type = 'PLUS'
+
+    elif (t.value == '-'):
+        t.type = 'MINUS'
+
     return t
 
 
