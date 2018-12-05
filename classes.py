@@ -148,7 +148,10 @@ class Method(Struct):
 
 
 	def __call__(self):
-		return self.func(*self.args)
+
+		res = self.func(*self.args)
+		self.func = None
+		self.args = None
 
 
 class Commit(Struct):
@@ -157,13 +160,20 @@ class Commit(Struct):
 		self.commits = []
 
 
+	def remove(self, method):
+		self.commits.remove(method)
+
+
 	def append(self, method):
 		self.commits.append(method)
 
 
 	def __call__(self):
+		
 		for method in self:
 			method()
+
+		self.commits = []
 
 
 	def __iter__(self):
@@ -290,7 +300,7 @@ class TableMeta(Struct):
 
 		self.positions = {"__rowid__": 1}
 
-		self.__TO_COMMIT = Commit()
+		self._TO_COMMIT = Commit()
 
 
 	def _write_to_file(self):
@@ -634,7 +644,7 @@ class TableMeta(Struct):
 
 
 	def commit(self):
-		self.__TO_COMMIT()
+		self._TO_COMMIT()
 
 
 	def insert(self, values=[], fields=[]):
@@ -694,7 +704,7 @@ class TableMeta(Struct):
 				row = self._update_copy_row(i.index, values, fields)
 				
 				update = Method(self.delete_row, i)
-				self.__TO_COMMIT.append(update)
+				self._TO_COMMIT.append(update)
 				updated.append(row)
 
 		return updated
