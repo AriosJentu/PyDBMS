@@ -62,6 +62,7 @@ class Struct:
 
 	def __repr__(self):
 		return "<Struct> {" + format_items(self) + "}"
+		
 
 	def __eq__(self, rstruct):
 
@@ -79,6 +80,7 @@ class Struct:
 
 		else:
 			return False
+
 
 	def __len__(self):
 		return len(self.keys())
@@ -123,6 +125,34 @@ class Select(Struct):
 
 	def __len__(self):
 		return self.count()
+
+
+class Method(Struct):
+
+	def __init__(self, func, *args):
+		self.func = func
+		self.args = args
+
+	def __call__(self):
+		return self.func(*self.args)
+
+
+class Commit(Struct):
+
+	def __init__(self):
+		
+		self.commits = []
+
+	def append(self, method):
+		self.commits.append(method)
+
+	def __call__(self):
+		for method in self:
+			method()
+
+	def __iter__(self):
+		for method in self.commits:
+			yield method
 
 
 
@@ -215,7 +245,7 @@ class DataBaseMeta(Struct):
 #Meta information about table
 class TableMeta(Struct):
 
-	SIZE = 32 + 22 + consts.fieldscount*24 + 6
+	SIZE = 32 + 22 + consts.fieldscount*24
 
 	def __init__(self):
 		
@@ -239,6 +269,9 @@ class TableMeta(Struct):
 
 		self.positions = {"__rowid__": 1}
 
+		self.__TO_COMMIT = Commit()
+
+
 	def _write_to_file(self):
 
 		stpos = self.index
@@ -257,6 +290,7 @@ class TableMeta(Struct):
 		#Fill by zeros
 		size = TableMeta.SIZE-(stpos-self.index)
 		file.writestr("", starts=stpos, cbytes=size)
+
 
 	def _update_pages(self):
 
@@ -333,6 +367,7 @@ class TableMeta(Struct):
 
 		self.fcount = len(self.fields)
 
+
 	def _check_values_for_fields(self, fields=[], values=[]):
 
 		if len(fields) != len(values):
@@ -406,6 +441,7 @@ class TableMeta(Struct):
 
 		return pages
 
+
 	def ipages(self):
 		index = self.firstpage
 
@@ -419,7 +455,7 @@ class TableMeta(Struct):
 			yield page
 
 
-	def irows(self, removed=False, include_updated=False):
+	def irows(self, removed=False, upd_inc=False):
 
 		#Returning almost unreaded rows (only indexes)
 		if removed:
@@ -434,16 +470,16 @@ class TableMeta(Struct):
 			row._read_indexes()
 			index = row.next
 
-			if row.available == 3 and not include_updated:
+			if row.available == 3 and not upd_inc:
 				continue
 
 			yield row
 
 
-	def get_rows(self, removed=False, fields=[]):
+	def get_rows(self, removed=False, upd_inc=False, fields=[]):
 
 		rows = []
-		for i in self.irows(removed):
+		for i in self.irows(removed, upd_inc):
 			i._read_from_file(fields)
 			rows.append(i)
 
@@ -478,12 +514,7 @@ class TableMeta(Struct):
 
 	def insert(self, values=[], fields=[]):
 
-		row, pos = self._insert_after(values, fields)
-
-		self.count += 1
-		self.lastelmnt = pos
-		self._update_pages()
-
+		row, _ = self._insert_after(values, fields)
 		return row
 
 	def _insert_after(self, values=[], fields=[], after_index=-1):
@@ -534,7 +565,13 @@ class TableMeta(Struct):
 		row.values = Struct({v:values[i] for i, v in enumerate(fields)})
 		row._write_to_file()
 
+		if after_index == self.lastelmnt:
+			self.lastelmnt = pos
+			self._update_pages()
+
+		self.count += 1
 		return row, pos
+
 
 	def _copy_row(self, rowindex=-1, upd_state=False):
 
@@ -544,21 +581,45 @@ class TableMeta(Struct):
 		copying = Row(rowindex)
 		copying.tblmeta = self
 		copying._read_from_file()
-		if upd_state:
-			copying.available = 3
-			copying._write_indexes()
 
 		keys = []
 		vals = []
 		for i, v in copying.values.items():
 			if i not in consts.bounded:
 				keys.append(i)
-				vals.append(v)
+				vals.append(v)	
 
-		return self._insert_after(vals, keys, rowindex)
+		row, _ = self._insert_after(vals, keys, rowindex)
+		
+		if upd_state:
+			
+			copying.available = 3
+			copying._write_indexes()
+
+			row.id = copying.id
+			row._write_indexes()
+
+		return row
+
+	def _update_copy_row(self, rowindex=-1, values=[], fields=[]):
+
+		fields = self._get_valid_fields(fields)
+		selects = Select(fields)
+
+		row = self._copy_row(rowindex, True)
+		row._update_by_fields(fields, values)
+
+		updrow = Row(rowindex)
+		updrow.tblmeta = self
+
+		updrow._read_indexes()
+		updrow.next = row.index
+		updrow._write_indexes()
+
+		return row
 
 
-	def select(self, fields=[], expr="1", removed=False):
+	def select(self, fields=[], expr="1", removed=False, upd_inc=False):
 
 		if type(fields) != list:
 			fields = [fields]
@@ -566,14 +627,13 @@ class TableMeta(Struct):
 		fields = self._get_valid_fields(fields)
 		selects = Select(fields)
 
-		for i in self.get_rows(removed=removed):
+		for i in self.get_rows(removed=removed, upd_inc=upd_inc):
 
 			if where(expr, i.values):
 				i._select_by_fields(fields)
 				selects.append(i)
 
 		return selects
-
 
 
 	def update(self, values=[], fields=[], expr="1"):
@@ -592,6 +652,60 @@ class TableMeta(Struct):
 		return updated
 
 
+	def update_cow(self, values=[], fields=[], expr="1"):
+
+		fields = self._get_valid_fields(fields)
+		self._check_values_for_fields(fields, values)
+
+		updated = []
+		for i in self.get_rows():
+
+			if where(expr, i.values):
+
+				i._select_by_fields(fields)
+				row = self._update_copy_row(i.index, values, fields)
+				
+				update = Method(self.delete_row, i)
+				self.__TO_COMMIT.append(update)
+				updated.append(row)
+
+		return updated
+
+
+	def commit(self):
+		self.__TO_COMMIT()
+
+
+	def delete_row(self, row):
+		
+		#Inverse: next means previous, and previous means next! (Reading/writing backward)
+		if row.index == self.firstelmnt:
+			self.firstelmnt = row.next
+
+		if row.index == self.lastelmnt:
+			self.lastelmnt = row.previous
+
+		row._read_indexes()
+		row._drop_row()
+		row.available = 2
+		row.previous = 0
+		row.next = self.lastrmvd
+		row._write_indexes()
+
+		if self.lastrmvd:
+			
+			prev_row = Row(self.lastrmvd)
+			prev_row.tblmeta = self
+			prev_row._read_indexes()
+			prev_row.previous = row.index
+			prev_row._write_indexes()
+
+		
+		#self.count -= 1
+		self.lastrmvd = row.index
+		self._update_pages()
+
+
 	def delete(self, expr="1"):
 
 		index = self.firstelmnt
@@ -604,33 +718,7 @@ class TableMeta(Struct):
 			index = cur_row.next
 
 			if where(expr, cur_row.values):
-				
-				#Inverse: next means previous, and previous means next! (Reading/writing backward)
-				
-				if cur_row.index == self.firstelmnt:
-					self.firstelmnt = cur_row.next
-
-				if cur_row.index == self.lastelmnt:
-					self.lastelmnt = cur_row.previous
-
-				cur_row._drop_row()
-				cur_row.available = 2
-				cur_row.previous = 0
-				cur_row.next = self.lastrmvd
-				cur_row._write_indexes()
-
-				if self.lastrmvd:
-					
-					prev_row = Row(self.lastrmvd)
-					prev_row.tblmeta = self
-					prev_row._read_indexes()
-					prev_row.previous = cur_row.index
-					prev_row._write_indexes()
-
-				
-				#self.count -= 1
-				self.lastrmvd = cur_row.index
-				self._update_pages()
+				self.delete_row(cur_row)
 
 
 	def _get_write_position(self):
@@ -672,6 +760,7 @@ class TableMeta(Struct):
 		p = "\nPositions:\t\t\t["+ ", ".join(poses) + "]"
 
 		return inf + n + i + cnt + fp + fel + lel + fr + rl + fc + fl + p
+
 
 	def __str__(self):
 
@@ -893,7 +982,8 @@ class Row(Struct):
 			{
 				self.available == 0: "Not Available",
 				self.available == 1: "Available",
-				self.available == 2: "Marked as Removed"
+				self.available == 2: "Marked as Removed",
+				self.available == 3: "Marked as updated"
 			}[True]
 		)		
 		prev = "\nPrevious Row at:\t{}".format(self.previous)		

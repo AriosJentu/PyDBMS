@@ -6,6 +6,7 @@ database = binarydb.DataBase("testdbss.jpdb")
 unexistdatabase = binarydb.DataBase("testdbsssss.jpdb")
 database.create()
 
+
 def test_connect_error():
 	with pytest.raises(exc.DBConnectionException):
 		database.connect()
@@ -22,7 +23,7 @@ def test_create_table_error():
 
 def test_insert():
 	for i in range(10):
-		database.Hello.insert([i], ["Kek"]) 
+		database["Hello"].insert([i], ["Kek"]) 
 		database.Hello.insert([i+10], ["Kek"]) 
 		
 
@@ -89,13 +90,49 @@ def test_push_to_removed():
 	assert len(sels) == len(sel)-cnt
 
 
+def test_copy_elements():
+	
+	sel = database.Hello.select("*")
+	n = 10
+	for i in range(n):
+		database.Hello._copy_row(sel[-1].index)
+	
+	sel2 = database.Hello.select("*")
+	
+	assert len(sel2) == len(sel)+n
+
+
 def test_update():
 
 	database.Hello.insert([1488, "SASKA"])
-	upd = database.Hello.update([2281488, "HELLOWORLD"], "*", "id == 31")
-	sel = database.Hello.select("*", "id == 31")
+	bsel = database.Hello.select("*", "id == 31")
+	updt = database.Hello.update([2281488, "HELLOWORLD"], "*", "id == 31")
+	asel = database.Hello.select("*", "id == 31")
 
-	assert upd[0] == sel[0] 
+	assert updt[0] != bsel[0] 
+	assert updt[0] == asel[0] 
+
+def test_delete_row():
+	
+	bsel = database.Hello.select("*")
+	database.Hello.delete_row(bsel[14])
+	asel = database.Hello.select("*")
+
+	assert len(bsel) == len(asel)+1
+
+
+def test_update_cow():
+
+	bsel = database.Hello.select("*")
+	updt = database.Hello.update_cow([1488228, "USETHEFORCELUKE"], "*", "id == 32")
+	asel = database.Hello.select("*", upd_inc=True)
+
+	assert len(bsel)+1 == len(asel)
+
+	database.Hello.commit()	
+	asel = database.Hello.select("*", upd_inc=True)
+
+	assert len(bsel) == len(asel)
 
 
 def test_clear_table():

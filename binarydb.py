@@ -56,16 +56,17 @@ class DataBase(classes.Struct):
 		return self[tblname].insert(values, fields)
 
 
-	def select_from(self, tblname, fields=[], expr="1"):
+	def select_from(self, tblname, fields=[], expr="1", removed=False, upd_inc=False):
 
 		self._check_table_name(tblname)
-		return self[tblname].select(fields, expr)
+		return self[tblname].select(fields, expr, removed, upd_inc)
 
 
 	def update_set(self, tblname, values=[], fields=[], expr="1"):
 
 		self._check_table_name(tblname)
 		return self[tblname].update(values, fields, expr)
+
 
 	def connect(self):
 
@@ -121,6 +122,7 @@ class DataBase(classes.Struct):
 			"Test3": bool
 		})
 
+
 	def get_tables(self):
 		return self._META.tables
 
@@ -131,3 +133,54 @@ class DataBase(classes.Struct):
 
 		return self[val]
 
+"""
+
+#TESTING
+db = DataBase("testdb2.jpdb")
+db.create()
+db.close()
+db.connect()
+
+db.create_table("Hello", {
+	"Test": str,
+	"Keks": int,
+})
+
+def decor(func):
+	def wrapper(inputs, *args, removed=False):
+
+		print()
+		print(inputs+":")
+		func(*args)
+		sel = db.Hello.select("*", removed=removed)
+		print(sel)
+		print("rempos: " + str(db.Hello.lastrmvd))
+		print("fpos: " + str(db.Hello.firstelmnt))
+		print("lpos: " + str(db.Hello.lastelmnt))
+
+	return wrapper
+
+for i in range(8):
+	db.Hello.insert(["Kek", i])
+
+insert = decor(db.Hello.insert)
+remove = decor(db.Hello.delete)
+update = decor(db.Hello.update)
+passed = decor(lambda: 0)
+
+passed("INSERTING 8 ELEMENTS")
+remove("REMOVING 1", "id < 3")
+remove("REMOVING 2", "id >= 6")
+passed("ALREADY REMOVED ELEMENTS", removed=True)
+insert("INSERTING 1", ["Kekos", 11])
+update("UPDATING", ["Lalka", 12], ["*"], "id >= 3")
+passed("AFTER UPDATING")
+insert("INSERTING 2", ["Kekos", 1488])
+passed("REMOVED AFTER INSERT", removed=True)
+#remove("REMOVING ALL", "1")
+passed("NOW ALL TABLE")
+db.Hello._copy_row(upd_state=True)
+passed("NOW ALL TABLE")
+#passed("NOW ALL REMOVED ELEMENTS IN TABLE", removed=True)
+
+"""
