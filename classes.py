@@ -44,8 +44,10 @@ class Struct:
 	def __init__(self, dictn={}):
 		self.__dict__.update(**dictn)
 
+
 	def __getattr__(self, val):	
 		return self.__getitem__(val)
+
 
 	def __getitem__(self, val):
 		if val not in self.__dict__.keys():
@@ -53,12 +55,15 @@ class Struct:
 
 		return self.__dict__[val]
 
+
 	def __setitem__(self, key, val):
 		self.__dict__[key] = val
+
 
 	def __iter__(self):
 		for i in self.__dict__.keys():
 			yield i
+
 
 	def __repr__(self):
 		return "<Struct> {" + format_items(self) + "}"
@@ -89,8 +94,10 @@ class Struct:
 	def keys(self):
 		return list(self.__dict__.keys())
 
+
 	def values(self):
 		return list(self.__dict__.values())
+
 
 	def items(self):
 		return self.__dict__.items()
@@ -102,11 +109,14 @@ class Select(Struct):
 		self.fields = fields
 		self.values = []
 
+
 	def append(self, row):
 		self.values.append(row)
 
+
 	def count(self):
 		return len(self.values)
+
 
 	def __repr__(self):
 		return "<Select Rows> {\n\tfields: " + (
@@ -116,12 +126,15 @@ class Select(Struct):
 			"\n\t\t".join([str(i) for i in self.values])
 		) + "\n}"
 
+
 	def __iter__(self):
 		for i in self.values:
 			yield i
 
+
 	def __getitem__(self, i):
 		return self.values[i]
+
 
 	def __len__(self):
 		return self.count()
@@ -133,6 +146,7 @@ class Method(Struct):
 		self.func = func
 		self.args = args
 
+
 	def __call__(self):
 		return self.func(*self.args)
 
@@ -140,20 +154,21 @@ class Method(Struct):
 class Commit(Struct):
 
 	def __init__(self):
-		
 		self.commits = []
+
 
 	def append(self, method):
 		self.commits.append(method)
+
 
 	def __call__(self):
 		for method in self:
 			method()
 
+
 	def __iter__(self):
 		for method in self.commits:
 			yield method
-
 
 
 class Type(Struct):
@@ -164,9 +179,11 @@ class Type(Struct):
 		self.type = ctype
 		self.fname = fullname
 
+
 	def __repr__(self):
 		return "<Type " + self.fname+" [" + self.name + "] : " + (
 			str(self.size) + " bytes>")
+
 
 	def __str__(self):
 		return self.name
@@ -193,6 +210,7 @@ class DataBaseMeta(Struct):
 		self.tables = Struct()
 		self.file = False
 
+
 	def _write_to_file(self):
 
 		file = self.file
@@ -205,9 +223,11 @@ class DataBaseMeta(Struct):
 		for i in self.tables:
 			i._write_to_file(file)
 
+
 	def _write_tables_count(self, count):
 		self.tblcount = count
 		self.file.writeint(self.tblcount, starts=14, cbytes=2)
+
 
 	def _read_from_file(self):
 
@@ -227,6 +247,7 @@ class DataBaseMeta(Struct):
 			meta._read_from_file()
 			
 			self.tables[meta.name] = meta
+
 
 	def info(self):
 
@@ -485,6 +506,7 @@ class TableMeta(Struct):
 
 		return rows
 
+
 	def _get_free_row(self):
 
 		if self.lastrmvd:
@@ -512,11 +534,6 @@ class TableMeta(Struct):
 		return pos
 
 
-	def insert(self, values=[], fields=[]):
-
-		row, _ = self._insert_after(values, fields)
-		return row
-
 	def _insert_after(self, values=[], fields=[], after_index=-1):
 
 		fields = self._get_valid_fields(fields, replace=True)
@@ -533,7 +550,6 @@ class TableMeta(Struct):
 		
 			self.firstelmnt = pos
 			self._update_pages()
-		
 
 		if after_index != 0:
 
@@ -546,7 +562,6 @@ class TableMeta(Struct):
 			
 			prevrow._write_indexes()
 
-
 		if savednext != 0:
 
 			nextrow = Row(savednext)
@@ -554,7 +569,6 @@ class TableMeta(Struct):
 			nextrow._read_indexes()
 			nextrow.previous = pos
 			nextrow._write_indexes()
-
 
 		row = Row(pos)
 		row.tblmeta = self
@@ -603,8 +617,8 @@ class TableMeta(Struct):
 
 	def _update_copy_row(self, rowindex=-1, values=[], fields=[]):
 
-		fields = self._get_valid_fields(fields)
-		selects = Select(fields)
+		fields = self._get_valid_fields(fields, replace=True)
+		self._check_values_for_fields(fields, values)
 
 		row = self._copy_row(rowindex, True)
 		row._update_by_fields(fields, values)
@@ -617,6 +631,20 @@ class TableMeta(Struct):
 		updrow._write_indexes()
 
 		return row
+
+
+	def commit(self):
+		self.__TO_COMMIT()
+
+
+	def insert(self, values=[], fields=[]):
+
+		row, _ = self._insert_after(values, fields)
+		return row
+
+
+	def insert_after(self, row, values=[], fields=[]):
+		return self._insert_after(values, fields, row.index)
 
 
 	def select(self, fields=[], expr="1", removed=False, upd_inc=False):
@@ -636,7 +664,7 @@ class TableMeta(Struct):
 		return selects
 
 
-	def update(self, values=[], fields=[], expr="1"):
+	def update_insecure(self, values=[], fields=[], expr="1"):
 		
 		fields = self._get_valid_fields(fields)
 		self._check_values_for_fields(fields, values)
@@ -652,7 +680,7 @@ class TableMeta(Struct):
 		return updated
 
 
-	def update_cow(self, values=[], fields=[], expr="1"):
+	def update(self, values=[], fields=[], expr="1"):
 
 		fields = self._get_valid_fields(fields)
 		self._check_values_for_fields(fields, values)
@@ -670,10 +698,6 @@ class TableMeta(Struct):
 				updated.append(row)
 
 		return updated
-
-
-	def commit(self):
-		self.__TO_COMMIT()
 
 
 	def delete_row(self, row):
@@ -787,6 +811,7 @@ class TablePage(Struct):
 		self.next = 0
 		self.count = 0
 
+
 	def _write_to_file(self):
 
 		stpos = self.index
@@ -796,6 +821,7 @@ class TablePage(Struct):
 		
 		size = consts.pagesize*self.tblmeta.rowlen
 		file.writeint(0, starts=stpos+12, cbytes=size)
+
 
 	def _update_to_file(self):
 
@@ -807,6 +833,7 @@ class TablePage(Struct):
 		file.writeint(self.previous, starts=stpos+6, cbytes=3)
 		file.writeint(self.next, starts=stpos+9, cbytes=3)
 
+
 	def _read_from_file(self):
 
 		stpos = self.index
@@ -815,6 +842,7 @@ class TablePage(Struct):
 		self.count = file.readint(starts=stpos+3, cbytes=3)
 		self.previous = file.readint(starts=stpos+6, cbytes=3)
 		self.next = file.readint(starts=stpos+9, cbytes=3)
+
 
 	def _get_write_position(self):
 
@@ -826,6 +854,7 @@ class TablePage(Struct):
 
 		return stpos + npos
 
+
 	def info(self):
 
 		info = "\nTABLE'S PAGE META INFORMATION:"
@@ -836,6 +865,7 @@ class TablePage(Struct):
 		count = "\nCurrent count:\t{}".format(self.count)
 
 		return info + meta + prev + snext + count	
+
 
 	def __str__(self):
 		return "<Page> {from: " + str(self.tblmeta.index) + \
@@ -861,6 +891,7 @@ class Row(Struct):
 		self.next = 0
 		self.values = Struct()
 		self.values.id = self.id
+
 
 	def _drop_row(self):
 
@@ -972,6 +1003,7 @@ class Row(Struct):
 		file.writeint(self.previous, starts=size-6, cbytes=3)
 		file.writeint(self.next, starts=size-3, cbytes=3)
 
+
 	def info(self):
 
 		info = "\nROW'S META INFORMATION:"
@@ -992,6 +1024,7 @@ class Row(Struct):
 
 		return info + meta + indx + iden + aval + prev + nxtr + vals
 
+
 	def __str__(self):
 		return "<Row> {from: " + str(self.tblmeta.index) + \
 			", index: " + str(self.index) + \
@@ -1001,6 +1034,7 @@ class Row(Struct):
 			", next: " + str(self.next) + \
 			" : " + format_items(self.values) + \
 		"}"
+
 
 	def __eq__(self, row):
 		svals = self.values

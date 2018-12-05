@@ -105,12 +105,16 @@ def test_copy_elements():
 def test_update():
 
 	database.Hello.insert([1488, "SASKA"])
-	bsel = database.Hello.select("*", "id == 31")
-	updt = database.Hello.update([2281488, "HELLOWORLD"], "*", "id == 31")
-	asel = database.Hello.select("*", "id == 31")
+	bsel = database.Hello.select("*", "id == 31 or id == 34")
+	updt = database.Hello.update_insecure([2281488, "HELLOWORLD"], "*", "id == 31 or id == 34")
+	asel = database.Hello.select("*", "id == 31 or id == 34")
 
 	assert updt[0] != bsel[0] 
 	assert updt[0] == asel[0] 
+
+	assert updt[1] != bsel[1] 
+	assert updt[1] == asel[1] 
+
 
 def test_delete_row():
 	
@@ -124,10 +128,10 @@ def test_delete_row():
 def test_update_cow():
 
 	bsel = database.Hello.select("*")
-	updt = database.Hello.update_cow([1488228, "USETHEFORCELUKE"], "*", "id == 32")
+	updt = database.Hello.update([1488228, "USETHEFORCELUKE"], "*", "id == 32 or id == 33")
 	asel = database.Hello.select("*", upd_inc=True)
 
-	assert len(bsel)+1 == len(asel)
+	assert len(bsel)+2 == len(asel)
 
 	database.Hello.commit()	
 	asel = database.Hello.select("*", upd_inc=True)
