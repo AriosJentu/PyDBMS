@@ -41,10 +41,24 @@ def test_select():
 
 def test_delete():
 
-	database.Hello.delete("id >= 10")
+	database.Hello.delete_insecure("id >= 10")
 
 	select = database.Hello.select("*")
 	assert len(select) == 10
+
+
+def test_secure_delete():
+
+	bfsel = database.Hello.select("*")
+	database.Hello.delete("id >= 3 and id <= 5")
+	bsel = database.Hello.select("*")
+
+	assert len(bfsel) == len(bsel)
+
+	database.Hello.commit()
+	asel = database.Hello.select("*")
+
+	assert len(bsel) == len(asel)+3
 
 
 def test_insert_error():
@@ -72,7 +86,7 @@ def test_remove_elements():
 
 	sel = database.Hello.select("*", "id < 3 or id > 25")
 	
-	database.Hello.delete("id >= 3 and id <= 25")
+	database.Hello.delete_insecure("id >= 3 and id <= 25")
 	sels = database.Hello.select("*")
 
 	for i in range(len(sel)):
@@ -142,6 +156,6 @@ def test_update_cow():
 
 def test_clear_table():
 
-	database.Hello.delete()
+	database.Hello.delete_insecure()
 	assert len(database.Hello.select("*")) == 0
 

@@ -152,6 +152,7 @@ class Method(Struct):
 		res = self.func(*self.args)
 		self.func = None
 		self.args = None
+		return res
 
 
 class Commit(Struct):
@@ -268,6 +269,7 @@ class DataBaseMeta(Struct):
 		) + "]"
 
 		return info + cnt + tabs
+
 
 	def __str__(self):
 		return "<DataBase> {tables count: " + str(self.tblcount) + "}"
@@ -386,7 +388,6 @@ class TableMeta(Struct):
 
 		self.fields = fields
 		self.types = types
-
 		
 		for i, v in enumerate(self.types):
 			if v in Types:
@@ -625,6 +626,7 @@ class TableMeta(Struct):
 
 		return row
 
+
 	def _update_copy_row(self, rowindex=-1, values=[], fields=[]):
 
 		fields = self._get_valid_fields(fields, replace=True)
@@ -648,13 +650,11 @@ class TableMeta(Struct):
 
 
 	def insert(self, values=[], fields=[]):
-
-		row, _ = self._insert_after(values, fields)
-		return row
+		return self._insert_after(values, fields)[0]
 
 
 	def insert_after(self, row, values=[], fields=[]):
-		return self._insert_after(values, fields, row.index)
+		return self._insert_after(values, fields, row.index)[0]
 
 
 	def select(self, fields=[], expr="1", removed=False, upd_inc=False):
@@ -740,7 +740,7 @@ class TableMeta(Struct):
 		self._update_pages()
 
 
-	def delete(self, expr="1"):
+	def delete_insecure(self, expr="1"):
 
 		index = self.firstelmnt
 
@@ -753,6 +753,26 @@ class TableMeta(Struct):
 
 			if where(expr, cur_row.values):
 				self.delete_row(cur_row)
+
+
+	def delete(self, expr="1"):
+
+		index = self.firstelmnt
+
+		while index != 0:			
+
+			cur_row = Row(index)
+			cur_row.tblmeta = self
+			cur_row._read_from_file()
+			index = cur_row.next
+
+			if where(expr, cur_row.values):
+
+				cur_row.available = 4
+				cur_row._write_indexes()
+
+				delete = Method(self.delete_row, cur_row)
+				self._TO_COMMIT.append(delete)
 
 
 	def _get_write_position(self):

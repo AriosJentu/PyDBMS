@@ -80,6 +80,12 @@ class DataBase(classes.Struct):
 		return self[tblname].update_insecure(values, fields, expr)
 
 
+	def delete_from_insecure(self, tblname, expr="1"):
+
+		self._check_table_name(tblname)
+		return self[tblname].delete_insecure(expr)
+
+
 	def delete_from(self, tblname, expr="1"):
 
 		self._check_table_name(tblname)
