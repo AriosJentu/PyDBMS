@@ -25,18 +25,19 @@ def test_insert():
 	for i in range(10):
 		database["Hello"].insert([i], ["Kek"]) 
 		database.Hello.insert([i+10], ["Kek"]) 
+		database.insert_into("Hello", [i+20], ["Kek"]) 
 		
 
 def test_select():
 
 	select1 = database.Hello.select("*")
-	assert len(select1) == 20
+	assert len(select1) == 30
 
 	select = database.Hello.select("*", "id < 10")
 	assert len(select) == 10
 
 	select = database.Hello.select("*", "Kek%10 == 0 or Kek%5 == 1")
-	assert len(select) == 6	#0, 10, 1, 6, 11, 16
+	assert len(select) == 9
 
 	select2 = database.Hello.select(["Kek"])
 	assert len(select1) == len(select2)
