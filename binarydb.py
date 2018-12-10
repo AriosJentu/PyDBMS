@@ -3,7 +3,7 @@ import exceptions as exc
 import consts
 import classes
 
-class DataBase(classes.Struct):
+class BinaryDataBase(classes.Struct):
 
 	def __init__(self, name):
 

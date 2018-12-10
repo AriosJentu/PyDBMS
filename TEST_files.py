@@ -2,8 +2,8 @@ import pytest
 import binarydb
 import exceptions as exc
 
-database = binarydb.DataBase("testdbss.jpdb")
-unexistdatabase = binarydb.DataBase("testdbsssss.jpdb")
+database = binarydb.BinaryDataBase("testdbss.jpdb")
+unexistdatabase = binarydb.BinaryDataBase("testdbsssss.jpdb")
 database.create()
 
 
@@ -29,14 +29,19 @@ def test_insert():
 
 def test_select():
 
-	select = database.Hello.select("*")
-	assert len(select) == 20
+	select1 = database.Hello.select("*")
+	assert len(select1) == 20
 
 	select = database.Hello.select("*", "id < 10")
 	assert len(select) == 10
 
 	select = database.Hello.select("*", "Kek%10 == 0 or Kek%5 == 1")
 	assert len(select) == 6	#0, 10, 1, 6, 11, 16
+
+	select2 = database.Hello.select(["Kek"])
+	assert len(select1) == len(select2)
+
+	assert len(select1.fields) > len(select2.fields)
 
 
 def test_delete():
