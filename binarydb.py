@@ -61,6 +61,13 @@ class BinaryDataBase(classes.Struct):
 		return self[tblname].create_page()
 
 
+	def show_create(self, tblname):
+
+		self._check_for_opened()
+		self._check_table_name(tblname)
+		return self[tblname].show_create()
+
+
 	def insert_into(self, tblname, values=[], fields=[]):
 		
 		self._check_for_opened()

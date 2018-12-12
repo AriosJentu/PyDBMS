@@ -187,15 +187,18 @@ class Commit(Struct):
 
 class Type(Struct):
 
-	def __init__(self, name, size, ctype, fullname):
+	def __init__(self, name, size, ctype, fullname, sqlname):
 		self.name = name
 		self.size = size
 		self.type = ctype
 		self.fname = fullname
+		self.sqlname = sqlname
 
 
 	def __repr__(self):
-		return "<Type " + self.fname+" [" + self.name + "] : " + (
+		return "<Type " + self.fname + ( 
+				" [" + self.name + "] {SQL: ") + \
+				self.sqlname + "} : " + (
 			str(self.size) + " bytes>")
 
 
@@ -204,9 +207,9 @@ class Type(Struct):
 
 
 Types = Struct({
-	"int": Type("int", consts.intsize, int, "integer"),
-	"bol": Type("bol", consts.boolsize, bool, "bool"),
-	"str": Type("str", consts.strsize, str, "string"),
+	"int": Type("int", consts.intsize, int, "integer", "INT"),
+	"bol": Type("bol", consts.boolsize, bool, "bool", "BOOL"),
+	"str": Type("str", consts.strsize, str, "string", "STRING"),
 })
 
 Types.integer = Types.int
@@ -790,6 +793,21 @@ class TableMeta(Struct):
 
 			page = self.create_page()
 			return (page._get_write_position(), page)
+
+
+	def show_create(self):
+		
+		fields = [
+			"'" + v + "' " + self.types[i].sqlname 
+			for i, v in enumerate(self.fields)
+		]
+
+		string = "--------------------------------------------------------\n"
+		string += "Create table: \n"
+		string += "CREATE TABLE '" + self.name + "' ("
+		string += ", ".join(fields) + ")\n"
+		string += "--------------------------------------------------------"
+		return string
 
 
 	def info(self):

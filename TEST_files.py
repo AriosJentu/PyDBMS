@@ -160,7 +160,6 @@ def test_update_cow():
 	assert len(bsel) == len(asel)
 
 
-
 def test_clear_table():
 
 	database.Hello.delete_insecure()
