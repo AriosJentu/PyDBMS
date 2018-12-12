@@ -71,6 +71,9 @@ class Struct:
 
 	def __eq__(self, rstruct):
 
+		if type(rstruct) != type(self):
+			return bool(rstruct)
+
 		sk = self.keys()
 		rk = rstruct.keys()
 		ak = set(sk + rk)

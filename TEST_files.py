@@ -2,9 +2,10 @@ import pytest
 import binarydb
 import exceptions as exc
 
+
 database = binarydb.BinaryDataBase("testdbss.jpdb")
 unexistdatabase = binarydb.BinaryDataBase("testdbsssss.jpdb")
-database.create()
+database.create(recreate=True)
 
 
 def test_connect_error():

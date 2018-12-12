@@ -22,8 +22,18 @@ class BinaryDataBase(classes.Struct):
 				raise exc.DBTableException(0, name)
 
 
+	def is_db_opened(self):
+		return self._META != False and self._BINFILE.is_file_exist()
+
+
+	def _check_for_opened(self):
+		if not self.is_db_opened():
+			raise exc.DBConnectionException(0)
+
+
 	def create_table(self, name, fields={}):
 
+		self._check_for_opened()
 		self._check_table_name(name, True)
 
 		self._FILE.seek(0, 2)
@@ -46,60 +56,70 @@ class BinaryDataBase(classes.Struct):
 
 	def create_page(self, tblname):
 
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].create_page()
 
 
 	def insert_into(self, tblname, values=[], fields=[]):
 		
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].insert(values, fields)
 
 
 	def insert_into_after(self, tblname, row, values=[], fields=[]):
 		
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].insert_after(row, values, fields)
 
 
 	def select_from(self, tblname, fields=[], expr="1", removed=False, upd_inc=False):
 
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].select(fields, expr, removed, upd_inc)
 
 
 	def update_set(self, tblname, values=[], fields=[], expr="1"):
 
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].update(values, fields, expr)
 
 
 	def update_set_insecure(self, tblname, values=[], fields=[], expr="1"):
 
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].update_insecure(values, fields, expr)
 
 
 	def delete_from_insecure(self, tblname, expr="1"):
 
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].delete_insecure(expr)
 
 
 	def delete_from(self, tblname, expr="1"):
 
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].delete(expr)
 
 
 	def delete_row_from(self, tblname, row, expr="1"):
 
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].delete_row(row, expr)
 
 
 	def commit_for(self, tblname):
 
+		self._check_for_opened()
 		self._check_table_name(tblname)
 		return self[tblname].commit()
 
@@ -127,17 +147,17 @@ class BinaryDataBase(classes.Struct):
 
 
 	def close(self):
+		self._check_for_opened()
 		self._FILE.close()
 		self._FILE = False
 
 
-	def create(self):
+	def create(self, recreate=False):
 
-		if not self._BINFILE.is_file_exist():
+		if recreate or not self._BINFILE.is_file_exist():
 			self._FILE = self._BINFILE.open("w+")
 		else:
-			self._FILE = self._BINFILE.open("w+")
-			#raise exc.DBFileException(0, self._DBNAME)		
+			raise exc.DBFileException(0, self._DBNAME)		
 
 		self._META = classes.DataBaseMeta()
 		self._META.file = self._FILE
@@ -160,6 +180,7 @@ class BinaryDataBase(classes.Struct):
 
 
 	def get_tables(self):
+		self._check_for_opened()
 		return self._META.tables
 
 
