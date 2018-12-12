@@ -1,0 +1,533 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Unused terminals:
+
+    WHERE
+
+Grammar
+
+Rule 0     S' -> start
+Rule 1     start -> create
+Rule 2     start -> show
+Rule 3     start -> select
+Rule 4     start -> insert
+Rule 5     create -> CREATE create_body
+Rule 6     create_body -> TABLE NAME LPAREN values RPAREN
+Rule 7     values -> NAME type
+Rule 8     values -> values COMMA NAME type
+Rule 9     show -> SHOW CREATE TABLE NAME
+Rule 10    select -> SELECT select_body
+Rule 11    select_body -> fields FROM NAME
+Rule 12    select_body -> LPAREN fields RPAREN FROM NAME
+Rule 13    field -> NAME
+Rule 14    connecting_operator -> OR
+Rule 15    connecting_operator -> NOR
+Rule 16    connecting_operator -> NAND
+Rule 17    connecting_operator -> AND
+Rule 18    operator -> EQUAL
+Rule 19    operator -> NOT_EQUAL
+Rule 20    operator -> GREATER_THAN
+Rule 21    operator -> LESS_THAN
+Rule 22    operator -> GREATER_THAN_OR_EQUAL
+Rule 23    operator -> LESS_THAN_OR_EQUAL
+Rule 24    operator -> BETWEEN
+Rule 25    operator -> LIKE
+Rule 26    operator -> IN
+Rule 27    operator -> OR
+Rule 28    operator -> NOR
+Rule 29    operator -> NOT
+Rule 30    operator -> NAND
+Rule 31    operator -> AND
+Rule 32    operator -> PLUS
+Rule 33    operator -> MINUS
+Rule 34    operator -> MUL
+Rule 35    operator -> TRUE_DIV
+Rule 36    operator -> FLOOR_DIV
+Rule 37    operator -> PERCENT
+Rule 38    operator -> POWER
+Rule 39    statement -> NAME
+Rule 40    insert -> INSERT insert_body
+Rule 41    insert_body -> INTO NAME LPAREN fields RPAREN
+Rule 42    insert_body -> INTO NAME VALUES LPAREN fields RPAREN
+Rule 43    fields -> NAME
+Rule 44    fields -> fields COMMA NAME
+Rule 45    type -> int
+Rule 46    type -> str
+Rule 47    type -> bol
+
+Terminals, with rules where they appear
+
+AND                  : 17 31
+BETWEEN              : 24
+COMMA                : 8 44
+CREATE               : 5 9
+EQUAL                : 18
+FLOOR_DIV            : 36
+FROM                 : 11 12
+GREATER_THAN         : 20
+GREATER_THAN_OR_EQUAL : 22
+IN                   : 26
+INSERT               : 40
+INTO                 : 41 42
+LESS_THAN            : 21
+LESS_THAN_OR_EQUAL   : 23
+LIKE                 : 25
+LPAREN               : 6 12 41 42
+MINUS                : 33
+MUL                  : 34
+NAME                 : 6 7 8 9 11 12 13 39 41 42 43 44
+NAND                 : 16 30
+NOR                  : 15 28
+NOT                  : 29
+NOT_EQUAL            : 19
+OR                   : 14 27
+PERCENT              : 37
+PLUS                 : 32
+POWER                : 38
+RPAREN               : 6 12 41 42
+SELECT               : 10
+SHOW                 : 9
+TABLE                : 6 9
+TRUE_DIV             : 35
+VALUES               : 42
+WHERE                : 
+bol                  : 47
+error                : 
+int                  : 45
+str                  : 46
+
+Nonterminals, with rules where they appear
+
+connecting_operator  : 
+create               : 1
+create_body          : 5
+field                : 
+fields               : 11 12 41 42 44
+insert               : 4
+insert_body          : 40
+operator             : 
+select               : 3
+select_body          : 10
+show                 : 2
+start                : 0
+statement            : 
+type                 : 7 8
+values               : 6 8
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . start
+    (1) start -> . create
+    (2) start -> . show
+    (3) start -> . select
+    (4) start -> . insert
+    (5) create -> . CREATE create_body
+    (9) show -> . SHOW CREATE TABLE NAME
+    (10) select -> . SELECT select_body
+    (40) insert -> . INSERT insert_body
+
+    CREATE          shift and go to state 6
+    SHOW            shift and go to state 7
+    SELECT          shift and go to state 8
+    INSERT          shift and go to state 9
+
+    start                          shift and go to state 1
+    create                         shift and go to state 2
+    show                           shift and go to state 3
+    select                         shift and go to state 4
+    insert                         shift and go to state 5
+
+state 1
+
+    (0) S' -> start .
+
+
+
+state 2
+
+    (1) start -> create .
+
+    $end            reduce using rule 1 (start -> create .)
+
+
+state 3
+
+    (2) start -> show .
+
+    $end            reduce using rule 2 (start -> show .)
+
+
+state 4
+
+    (3) start -> select .
+
+    $end            reduce using rule 3 (start -> select .)
+
+
+state 5
+
+    (4) start -> insert .
+
+    $end            reduce using rule 4 (start -> insert .)
+
+
+state 6
+
+    (5) create -> CREATE . create_body
+    (6) create_body -> . TABLE NAME LPAREN values RPAREN
+
+    TABLE           shift and go to state 11
+
+    create_body                    shift and go to state 10
+
+state 7
+
+    (9) show -> SHOW . CREATE TABLE NAME
+
+    CREATE          shift and go to state 12
+
+
+state 8
+
+    (10) select -> SELECT . select_body
+    (11) select_body -> . fields FROM NAME
+    (12) select_body -> . LPAREN fields RPAREN FROM NAME
+    (43) fields -> . NAME
+    (44) fields -> . fields COMMA NAME
+
+    LPAREN          shift and go to state 16
+    NAME            shift and go to state 15
+
+    select_body                    shift and go to state 13
+    fields                         shift and go to state 14
+
+state 9
+
+    (40) insert -> INSERT . insert_body
+    (41) insert_body -> . INTO NAME LPAREN fields RPAREN
+    (42) insert_body -> . INTO NAME VALUES LPAREN fields RPAREN
+
+    INTO            shift and go to state 18
+
+    insert_body                    shift and go to state 17
+
+state 10
+
+    (5) create -> CREATE create_body .
+
+    $end            reduce using rule 5 (create -> CREATE create_body .)
+
+
+state 11
+
+    (6) create_body -> TABLE . NAME LPAREN values RPAREN
+
+    NAME            shift and go to state 19
+
+
+state 12
+
+    (9) show -> SHOW CREATE . TABLE NAME
+
+    TABLE           shift and go to state 20
+
+
+state 13
+
+    (10) select -> SELECT select_body .
+
+    $end            reduce using rule 10 (select -> SELECT select_body .)
+
+
+state 14
+
+    (11) select_body -> fields . FROM NAME
+    (44) fields -> fields . COMMA NAME
+
+    FROM            shift and go to state 21
+    COMMA           shift and go to state 22
+
+
+state 15
+
+    (43) fields -> NAME .
+
+    FROM            reduce using rule 43 (fields -> NAME .)
+    COMMA           reduce using rule 43 (fields -> NAME .)
+    RPAREN          reduce using rule 43 (fields -> NAME .)
+
+
+state 16
+
+    (12) select_body -> LPAREN . fields RPAREN FROM NAME
+    (43) fields -> . NAME
+    (44) fields -> . fields COMMA NAME
+
+    NAME            shift and go to state 15
+
+    fields                         shift and go to state 23
+
+state 17
+
+    (40) insert -> INSERT insert_body .
+
+    $end            reduce using rule 40 (insert -> INSERT insert_body .)
+
+
+state 18
+
+    (41) insert_body -> INTO . NAME LPAREN fields RPAREN
+    (42) insert_body -> INTO . NAME VALUES LPAREN fields RPAREN
+
+    NAME            shift and go to state 24
+
+
+state 19
+
+    (6) create_body -> TABLE NAME . LPAREN values RPAREN
+
+    LPAREN          shift and go to state 25
+
+
+state 20
+
+    (9) show -> SHOW CREATE TABLE . NAME
+
+    NAME            shift and go to state 26
+
+
+state 21
+
+    (11) select_body -> fields FROM . NAME
+
+    NAME            shift and go to state 27
+
+
+state 22
+
+    (44) fields -> fields COMMA . NAME
+
+    NAME            shift and go to state 28
+
+
+state 23
+
+    (12) select_body -> LPAREN fields . RPAREN FROM NAME
+    (44) fields -> fields . COMMA NAME
+
+    RPAREN          shift and go to state 29
+    COMMA           shift and go to state 22
+
+
+state 24
+
+    (41) insert_body -> INTO NAME . LPAREN fields RPAREN
+    (42) insert_body -> INTO NAME . VALUES LPAREN fields RPAREN
+
+    LPAREN          shift and go to state 30
+    VALUES          shift and go to state 31
+
+
+state 25
+
+    (6) create_body -> TABLE NAME LPAREN . values RPAREN
+    (7) values -> . NAME type
+    (8) values -> . values COMMA NAME type
+
+    NAME            shift and go to state 32
+
+    values                         shift and go to state 33
+
+state 26
+
+    (9) show -> SHOW CREATE TABLE NAME .
+
+    $end            reduce using rule 9 (show -> SHOW CREATE TABLE NAME .)
+
+
+state 27
+
+    (11) select_body -> fields FROM NAME .
+
+    $end            reduce using rule 11 (select_body -> fields FROM NAME .)
+
+
+state 28
+
+    (44) fields -> fields COMMA NAME .
+
+    FROM            reduce using rule 44 (fields -> fields COMMA NAME .)
+    COMMA           reduce using rule 44 (fields -> fields COMMA NAME .)
+    RPAREN          reduce using rule 44 (fields -> fields COMMA NAME .)
+
+
+state 29
+
+    (12) select_body -> LPAREN fields RPAREN . FROM NAME
+
+    FROM            shift and go to state 34
+
+
+state 30
+
+    (41) insert_body -> INTO NAME LPAREN . fields RPAREN
+    (43) fields -> . NAME
+    (44) fields -> . fields COMMA NAME
+
+    NAME            shift and go to state 15
+
+    fields                         shift and go to state 35
+
+state 31
+
+    (42) insert_body -> INTO NAME VALUES . LPAREN fields RPAREN
+
+    LPAREN          shift and go to state 36
+
+
+state 32
+
+    (7) values -> NAME . type
+    (45) type -> . int
+    (46) type -> . str
+    (47) type -> . bol
+
+    int             shift and go to state 38
+    str             shift and go to state 39
+    bol             shift and go to state 40
+
+    type                           shift and go to state 37
+
+state 33
+
+    (6) create_body -> TABLE NAME LPAREN values . RPAREN
+    (8) values -> values . COMMA NAME type
+
+    RPAREN          shift and go to state 41
+    COMMA           shift and go to state 42
+
+
+state 34
+
+    (12) select_body -> LPAREN fields RPAREN FROM . NAME
+
+    NAME            shift and go to state 43
+
+
+state 35
+
+    (41) insert_body -> INTO NAME LPAREN fields . RPAREN
+    (44) fields -> fields . COMMA NAME
+
+    RPAREN          shift and go to state 44
+    COMMA           shift and go to state 22
+
+
+state 36
+
+    (42) insert_body -> INTO NAME VALUES LPAREN . fields RPAREN
+    (43) fields -> . NAME
+    (44) fields -> . fields COMMA NAME
+
+    NAME            shift and go to state 15
+
+    fields                         shift and go to state 45
+
+state 37
+
+    (7) values -> NAME type .
+
+    RPAREN          reduce using rule 7 (values -> NAME type .)
+    COMMA           reduce using rule 7 (values -> NAME type .)
+
+
+state 38
+
+    (45) type -> int .
+
+    RPAREN          reduce using rule 45 (type -> int .)
+    COMMA           reduce using rule 45 (type -> int .)
+
+
+state 39
+
+    (46) type -> str .
+
+    RPAREN          reduce using rule 46 (type -> str .)
+    COMMA           reduce using rule 46 (type -> str .)
+
+
+state 40
+
+    (47) type -> bol .
+
+    RPAREN          reduce using rule 47 (type -> bol .)
+    COMMA           reduce using rule 47 (type -> bol .)
+
+
+state 41
+
+    (6) create_body -> TABLE NAME LPAREN values RPAREN .
+
+    $end            reduce using rule 6 (create_body -> TABLE NAME LPAREN values RPAREN .)
+
+
+state 42
+
+    (8) values -> values COMMA . NAME type
+
+    NAME            shift and go to state 46
+
+
+state 43
+
+    (12) select_body -> LPAREN fields RPAREN FROM NAME .
+
+    $end            reduce using rule 12 (select_body -> LPAREN fields RPAREN FROM NAME .)
+
+
+state 44
+
+    (41) insert_body -> INTO NAME LPAREN fields RPAREN .
+
+    $end            reduce using rule 41 (insert_body -> INTO NAME LPAREN fields RPAREN .)
+
+
+state 45
+
+    (42) insert_body -> INTO NAME VALUES LPAREN fields . RPAREN
+    (44) fields -> fields . COMMA NAME
+
+    RPAREN          shift and go to state 47
+    COMMA           shift and go to state 22
+
+
+state 46
+
+    (8) values -> values COMMA NAME . type
+    (45) type -> . int
+    (46) type -> . str
+    (47) type -> . bol
+
+    int             shift and go to state 38
+    str             shift and go to state 39
+    bol             shift and go to state 40
+
+    type                           shift and go to state 48
+
+state 47
+
+    (42) insert_body -> INTO NAME VALUES LPAREN fields RPAREN .
+
+    $end            reduce using rule 42 (insert_body -> INTO NAME VALUES LPAREN fields RPAREN .)
+
+
+state 48
+
+    (8) values -> values COMMA NAME type .
+
+    RPAREN          reduce using rule 8 (values -> values COMMA NAME type .)
+    COMMA           reduce using rule 8 (values -> values COMMA NAME type .)
+

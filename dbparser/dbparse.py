@@ -1,4 +1,8 @@
-from lexer import tokens
+try:
+    from dbparser.lexer import tokens
+except:
+    from lexer import tokens
+
 import ply.yacc as yacc
 
 class Struct:
@@ -45,10 +49,10 @@ class PShow(PCreate):
 
 class PSelect(Struct):
 
-    def __init__(self, select_body, where_body):
+    def __init__(self, select_body):
         self.type = "select"
         self.select = select_body
-        self.where = where_body
+        
 
 
 class PSelectBody(Struct):
@@ -62,23 +66,13 @@ class PSelectBody(Struct):
         self.fields = fields
 
 
-class PWhereBody(Struct):
-
-    def __init__(self):
-
-        self.fields = []
-        self.operators = []
-        self.statements = []
-
-    def set_where_body(self, *values):
-
-        self.fields = values[0][0]
-        self.operators = values[0][1]
-        self.statements = values[0][2]
 
 
-class PInsert(PSelect):
-    pass
+
+class PInsert(Struct):
+    def __init__(self, insert_body):
+        self.type = "insert"
+        self.insert = insert_body
 
 
 class PVars:
@@ -141,12 +135,11 @@ def p_show(p):
 
 
 def p_select(p):
-    '''select : SELECT select_body 
-              | SELECT select_body where_body'''
-    if len(p) == 3:
-        p[0] = PSelect(p[2], [])
-    else:
-        p[0] = PSelect(p[2], p[3])
+    '''select : SELECT select_body'''
+              
+    
+    p[0] = PSelect(p[2])
+    
 
     
 def p_select_body(p):
@@ -170,36 +163,9 @@ def p_select_body(p):
     p[0].set_fields(p[fields])
 
 
-def p_where_body(p):
-    '''where_body : WHERE where_condition'''
 
-    p[0] = PWhereBody()
 
-    p[0].set_where_body(p[2])
 
-def p_where_condition(p):
-    '''where_condition : field operator statement
-                       | where_condition connecting_operator field operator statement'''
-
-    field, operator, statement = 0, 0, 0
-    p[0] = [[], [], []]
-
-    if len(p) == 4:
-
-        field = 1
-        operator = 2
-        statement = 3
-    else:
-
-        p[0] = p[1]
-
-        field = 3
-        operator = 4
-        statement = 5
-
-    p[0][0].append(p[field])
-    p[0][1].append(p[operator])
-    p[0][2].append(p[statement])
 
 def p_field(p):
     '''field : NAME'''
@@ -249,7 +215,7 @@ def p_statement(p):
 def p_insert(p):
     '''insert : INSERT insert_body'''
 
-    p[0] = p[2]
+    p[0] = PInsert(p[2])
 
 
 def p_insert_body(p):
@@ -265,6 +231,7 @@ def p_insert_body(p):
     else:
         fields = 5
 
+    p[0] = PSelectBody(p[name])
     p[0].set_fields(p[fields])
 
 
@@ -299,15 +266,21 @@ parser = yacc.yacc()
 
 def build_tree(code):
 
-    result = []
+    result = [[], []]
 
-    start = code.index('WHERE') + 6
-    finish = len(code)
-
-    result.append(code[start:finish])
-    result.append(parser.parse(code))
     
+    if "WHERE" in code:
+        start = code.index('WHERE') + 6
+        finish = len(code)
 
+        result[1] = (code[start:finish])
 
+        code = code[0:start-6]
+        
+
+    else:
+        result[1] = "1"
+
+    result[0] = parser.parse(code)
 
     return result
