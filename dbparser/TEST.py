@@ -22,16 +22,16 @@ UPDATE 'table' SET field1=val1, 'field2'='val2' WHERE cond
 #s = '''SELECT (value, value1) FROM test WHERE (value - -1 AND X OR Y)'''
 #s = '''SELECT (value, value1) FROM test WHERE (value - -1) AND (X OR Y)'''
 #s = '''INSERT INTO 'test' (val1, val2)'''
-s = '''INSERT INTO 'test' VALUES (val1, val2)'''
+#s = '''INSERT INTO 'test' VALUES (val1, val2)'''
+
+#s = '''UPDATE tablename SET field=value, field=value WHERE con'''
+s = '''DELETE FROM tablename WHERE cond'''
+
 
 
 tree = parse.build_tree(s)
 
-print(tree[1])
-print(tree[0].type)
-print(tree[0].insert.name)
-print(tree[0].insert.fields)
-print()
+print(tree[0].name)
 
 
 

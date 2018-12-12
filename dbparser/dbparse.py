@@ -66,13 +66,36 @@ class PSelectBody(Struct):
         self.fields = fields
 
 
-
-
-
 class PInsert(Struct):
+
     def __init__(self, insert_body):
+
         self.type = "insert"
         self.insert = insert_body
+
+class PUpdate(Struct):
+
+    def __init__(self, name=""):
+
+        self.name = name
+        self.type = "update"
+
+        self.fields = []
+        self.values = []
+
+    def set(self, vars_):
+        
+        self.fields = vars_.vars[0]
+        self.values = vars_.vars[1]
+
+class PDelete(PCreate):
+
+    def __init__(self, name=""):
+
+        self.name = name
+        self.type = "delete"
+
+    def set_vars(self, *args): pass
 
 
 class PVars:
@@ -91,7 +114,9 @@ def p_start(p):
     '''start : create
              | show
              | select
-             | insert'''
+             | insert
+             | update
+             | delete'''
 
     p[0] = p[1]
 
@@ -164,54 +189,6 @@ def p_select_body(p):
 
 
 
-
-
-
-def p_field(p):
-    '''field : NAME'''
-
-    p[0] = p[1]
-
-def p_connecting_operator(p):
-    '''connecting_operator : OR
-                           | NOR
-                           | NAND
-                           | AND '''
-
-    p[0] = p[1]
-
-def p_operator(p):
-    '''operator : EQUAL
-                | NOT_EQUAL
-                | GREATER_THAN
-                | LESS_THAN
-                | GREATER_THAN_OR_EQUAL
-                | LESS_THAN_OR_EQUAL
-                | BETWEEN 
-                | LIKE
-                | IN
-                | OR
-                | NOR
-                | NOT
-                | NAND
-                | AND
-                | PLUS
-                | MINUS
-                | MUL
-                | TRUE_DIV
-                | FLOOR_DIV
-                | PERCENT
-                | POWER'''
-
-    p[0] = p[1]
-
-
-def p_statement(p):
-    '''statement : NAME'''
-
-    p[0] = p[1]
-
-
 def p_insert(p):
     '''insert : INSERT insert_body'''
 
@@ -235,6 +212,42 @@ def p_insert_body(p):
     p[0].set_fields(p[fields])
 
 
+def p_update(p):
+    '''update : UPDATE update_body'''
+
+    p[0] = p[2]
+
+def p_delete(p):
+    '''delete : DELETE FROM NAME'''
+
+    p[0] = PDelete(p[3])
+
+def p_update_body(p):
+    '''update_body : NAME SET expression'''
+
+    p[0] = PUpdate(p[1])
+    p[0].set(p[3])
+
+def p_expression(p):
+    '''expression : field operator value
+                  | expression COMMA field operator value'''
+
+    field, value = 0, 0
+    if len(p) == 4:
+
+        p[0] = PVars()
+        field = p[1]
+        value = p[3]
+
+    else:
+    
+        p[0] = p[1]
+        field = p[3]
+        value = p[5]
+
+    p[0].append_values(field)
+    p[0].append_types(value)
+
 def p_fields(p):
     '''fields : NAME
               | fields COMMA NAME'''
@@ -253,6 +266,21 @@ def p_fields(p):
 
     p[0].append(p[field])
 
+def p_field(p):
+    '''field : NAME'''
+
+    p[0] = p[1]
+
+
+def p_value(p):
+    '''value : NAME'''
+
+    p[0] = p[1]
+
+def p_operator(p):
+    '''operator : EQUAL'''
+
+    p[0] = p[1]
 
 def p_type(p):
     '''type : int 

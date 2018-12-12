@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = 'AND BETWEEN COMMA CREATE EQUAL FLOOR_DIV FROM GREATER_THAN GREATER_THAN_OR_EQUAL IN INSERT INTO LESS_THAN LESS_THAN_OR_EQUAL LIKE LPAREN MINUS MUL NAME NAND NOR NOT NOT_EQUAL OR PERCENT PLUS POWER RPAREN SELECT SHOW TABLE TRUE_DIV VALUES WHERE bol int strstart : create\n             | show\n             | select\n             | insertcreate : CREATE create_bodycreate_body : TABLE NAME LPAREN values RPARENvalues : NAME type \n              | values COMMA NAME typeshow : SHOW CREATE TABLE NAMEselect : SELECT select_bodyselect_body : fields FROM NAME\n                   | LPAREN fields RPAREN FROM NAMEfield : NAMEconnecting_operator : OR\n                           | NOR\n                           | NAND\n                           | AND operator : EQUAL\n                | NOT_EQUAL\n                | GREATER_THAN\n                | LESS_THAN\n                | GREATER_THAN_OR_EQUAL\n                | LESS_THAN_OR_EQUAL\n                | BETWEEN \n                | LIKE\n                | IN\n                | OR\n                | NOR\n                | NOT\n                | NAND\n                | AND\n                | PLUS\n                | MINUS\n                | MUL\n                | TRUE_DIV\n                | FLOOR_DIV\n                | PERCENT\n                | POWERstatement : NAMEinsert : INSERT insert_bodyinsert_body : INTO NAME LPAREN fields RPAREN\n                   | INTO NAME VALUES LPAREN fields RPARENfields : NAME\n              | fields COMMA NAMEtype : int \n            | str\n            | bol'
+_lr_signature = 'AND BETWEEN COMMA CREATE DELETE EQUAL FLOOR_DIV FROM GREATER_THAN GREATER_THAN_OR_EQUAL IN INSERT INTO LESS_THAN LESS_THAN_OR_EQUAL LIKE LPAREN MINUS MUL NAME NAND NOR NOT NOT_EQUAL OR PERCENT PLUS POWER RPAREN SELECT SET SHOW TABLE TRUE_DIV UPDATE VALUES WHERE bol int strstart : create\n             | show\n             | select\n             | insert\n             | update\n             | deletecreate : CREATE create_bodycreate_body : TABLE NAME LPAREN values RPARENvalues : NAME type \n              | values COMMA NAME typeshow : SHOW CREATE TABLE NAMEselect : SELECT select_bodyselect_body : fields FROM NAME\n                   | LPAREN fields RPAREN FROM NAMEinsert : INSERT insert_bodyinsert_body : INTO NAME LPAREN fields RPAREN\n                   | INTO NAME VALUES LPAREN fields RPARENupdate : UPDATE update_bodydelete : DELETE FROM NAMEupdate_body : NAME SET expressionexpression : field operator value\n                  | expression COMMA field operator valuefields : NAME\n              | fields COMMA NAMEfield : NAMEvalue : NAMEoperator : EQUALtype : int \n            | str\n            | bol'
     
-_lr_action_items = {'CREATE':([0,7,],[6,12,]),'SHOW':([0,],[7,]),'SELECT':([0,],[8,]),'INSERT':([0,],[9,]),'$end':([1,2,3,4,5,10,13,17,26,27,41,43,44,47,],[0,-1,-2,-3,-4,-5,-10,-40,-9,-11,-6,-12,-41,-42,]),'TABLE':([6,12,],[11,20,]),'LPAREN':([8,19,24,31,],[16,25,30,36,]),'NAME':([8,11,16,18,20,21,22,25,30,34,36,42,],[15,19,15,24,26,27,28,32,15,43,15,46,]),'INTO':([9,],[18,]),'FROM':([14,15,28,29,],[21,-43,-44,34,]),'COMMA':([14,15,23,28,33,35,37,38,39,40,45,48,],[22,-43,22,-44,42,22,-7,-45,-46,-47,22,-8,]),'RPAREN':([15,23,28,33,35,37,38,39,40,45,48,],[-43,29,-44,41,44,-7,-45,-46,-47,47,-8,]),'VALUES':([24,],[31,]),'int':([32,46,],[38,38,]),'str':([32,46,],[39,39,]),'bol':([32,46,],[40,40,]),}
+_lr_action_items = {'CREATE':([0,9,],[8,16,]),'SHOW':([0,],[9,]),'SELECT':([0,],[10,]),'INSERT':([0,],[11,]),'UPDATE':([0,],[12,]),'DELETE':([0,],[13,]),'$end':([1,2,3,4,5,6,7,14,17,21,23,33,35,36,42,56,58,59,62,63,65,68,],[0,-1,-2,-3,-4,-5,-6,-7,-12,-15,-18,-19,-11,-13,-20,-8,-14,-16,-21,-26,-17,-22,]),'TABLE':([8,16,],[15,27,]),'LPAREN':([10,26,31,40,],[20,34,39,48,]),'NAME':([10,12,15,20,22,25,27,28,29,32,34,39,46,48,49,50,51,57,66,],[19,24,26,19,31,33,35,36,37,41,44,19,58,19,41,63,-27,64,63,]),'INTO':([11,],[22,]),'FROM':([13,18,19,37,38,],[25,28,-23,-24,46,]),'COMMA':([18,19,30,37,42,45,47,52,53,54,55,60,62,63,67,68,],[29,-23,29,-24,49,57,29,-9,-28,-29,-30,29,-21,-26,-10,-22,]),'RPAREN':([19,30,37,45,47,52,53,54,55,60,67,],[-23,38,-24,56,59,-9,-28,-29,-30,65,-10,]),'SET':([24,],[32,]),'VALUES':([31,],[40,]),'EQUAL':([41,43,61,],[-25,51,51,]),'int':([44,64,],[53,53,]),'str':([44,64,],[54,54,]),'bol':([44,64,],[55,55,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'start':([0,],[1,]),'create':([0,],[2,]),'show':([0,],[3,]),'select':([0,],[4,]),'insert':([0,],[5,]),'create_body':([6,],[10,]),'select_body':([8,],[13,]),'fields':([8,16,30,36,],[14,23,35,45,]),'insert_body':([9,],[17,]),'values':([25,],[33,]),'type':([32,46,],[37,48,]),}
+_lr_goto_items = {'start':([0,],[1,]),'create':([0,],[2,]),'show':([0,],[3,]),'select':([0,],[4,]),'insert':([0,],[5,]),'update':([0,],[6,]),'delete':([0,],[7,]),'create_body':([8,],[14,]),'select_body':([10,],[17,]),'fields':([10,20,39,48,],[18,30,47,60,]),'insert_body':([11,],[21,]),'update_body':([12,],[23,]),'expression':([32,],[42,]),'field':([32,49,],[43,61,]),'values':([34,],[45,]),'operator':([43,61,],[50,66,]),'type':([44,64,],[52,67,]),'value':([50,66,],[62,68,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -27,51 +27,34 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> start","S'",1,None,None,None),
-  ('start -> create','start',1,'p_start','dbparse.py',89),
-  ('start -> show','start',1,'p_start','dbparse.py',90),
-  ('start -> select','start',1,'p_start','dbparse.py',91),
-  ('start -> insert','start',1,'p_start','dbparse.py',92),
-  ('create -> CREATE create_body','create',2,'p_create','dbparse.py',98),
-  ('create_body -> TABLE NAME LPAREN values RPAREN','create_body',5,'p_create_body','dbparse.py',104),
-  ('values -> NAME type','values',2,'p_values','dbparse.py',111),
-  ('values -> values COMMA NAME type','values',4,'p_values','dbparse.py',112),
-  ('show -> SHOW CREATE TABLE NAME','show',4,'p_show','dbparse.py',130),
-  ('select -> SELECT select_body','select',2,'p_select','dbparse.py',136),
-  ('select_body -> fields FROM NAME','select_body',3,'p_select_body','dbparse.py',144),
-  ('select_body -> LPAREN fields RPAREN FROM NAME','select_body',5,'p_select_body','dbparse.py',145),
-  ('field -> NAME','field',1,'p_field','dbparse.py',169),
-  ('connecting_operator -> OR','connecting_operator',1,'p_connecting_operator','dbparse.py',174),
-  ('connecting_operator -> NOR','connecting_operator',1,'p_connecting_operator','dbparse.py',175),
-  ('connecting_operator -> NAND','connecting_operator',1,'p_connecting_operator','dbparse.py',176),
-  ('connecting_operator -> AND','connecting_operator',1,'p_connecting_operator','dbparse.py',177),
-  ('operator -> EQUAL','operator',1,'p_operator','dbparse.py',182),
-  ('operator -> NOT_EQUAL','operator',1,'p_operator','dbparse.py',183),
-  ('operator -> GREATER_THAN','operator',1,'p_operator','dbparse.py',184),
-  ('operator -> LESS_THAN','operator',1,'p_operator','dbparse.py',185),
-  ('operator -> GREATER_THAN_OR_EQUAL','operator',1,'p_operator','dbparse.py',186),
-  ('operator -> LESS_THAN_OR_EQUAL','operator',1,'p_operator','dbparse.py',187),
-  ('operator -> BETWEEN','operator',1,'p_operator','dbparse.py',188),
-  ('operator -> LIKE','operator',1,'p_operator','dbparse.py',189),
-  ('operator -> IN','operator',1,'p_operator','dbparse.py',190),
-  ('operator -> OR','operator',1,'p_operator','dbparse.py',191),
-  ('operator -> NOR','operator',1,'p_operator','dbparse.py',192),
-  ('operator -> NOT','operator',1,'p_operator','dbparse.py',193),
-  ('operator -> NAND','operator',1,'p_operator','dbparse.py',194),
-  ('operator -> AND','operator',1,'p_operator','dbparse.py',195),
-  ('operator -> PLUS','operator',1,'p_operator','dbparse.py',196),
-  ('operator -> MINUS','operator',1,'p_operator','dbparse.py',197),
-  ('operator -> MUL','operator',1,'p_operator','dbparse.py',198),
-  ('operator -> TRUE_DIV','operator',1,'p_operator','dbparse.py',199),
-  ('operator -> FLOOR_DIV','operator',1,'p_operator','dbparse.py',200),
-  ('operator -> PERCENT','operator',1,'p_operator','dbparse.py',201),
-  ('operator -> POWER','operator',1,'p_operator','dbparse.py',202),
-  ('statement -> NAME','statement',1,'p_statement','dbparse.py',208),
-  ('insert -> INSERT insert_body','insert',2,'p_insert','dbparse.py',214),
-  ('insert_body -> INTO NAME LPAREN fields RPAREN','insert_body',5,'p_insert_body','dbparse.py',220),
-  ('insert_body -> INTO NAME VALUES LPAREN fields RPAREN','insert_body',6,'p_insert_body','dbparse.py',221),
-  ('fields -> NAME','fields',1,'p_fields','dbparse.py',236),
-  ('fields -> fields COMMA NAME','fields',3,'p_fields','dbparse.py',237),
-  ('type -> int','type',1,'p_type','dbparse.py',255),
-  ('type -> str','type',1,'p_type','dbparse.py',256),
-  ('type -> bol','type',1,'p_type','dbparse.py',257),
+  ('start -> create','start',1,'p_start','dbparse.py',114),
+  ('start -> show','start',1,'p_start','dbparse.py',115),
+  ('start -> select','start',1,'p_start','dbparse.py',116),
+  ('start -> insert','start',1,'p_start','dbparse.py',117),
+  ('start -> update','start',1,'p_start','dbparse.py',118),
+  ('start -> delete','start',1,'p_start','dbparse.py',119),
+  ('create -> CREATE create_body','create',2,'p_create','dbparse.py',125),
+  ('create_body -> TABLE NAME LPAREN values RPAREN','create_body',5,'p_create_body','dbparse.py',131),
+  ('values -> NAME type','values',2,'p_values','dbparse.py',138),
+  ('values -> values COMMA NAME type','values',4,'p_values','dbparse.py',139),
+  ('show -> SHOW CREATE TABLE NAME','show',4,'p_show','dbparse.py',157),
+  ('select -> SELECT select_body','select',2,'p_select','dbparse.py',163),
+  ('select_body -> fields FROM NAME','select_body',3,'p_select_body','dbparse.py',171),
+  ('select_body -> LPAREN fields RPAREN FROM NAME','select_body',5,'p_select_body','dbparse.py',172),
+  ('insert -> INSERT insert_body','insert',2,'p_insert','dbparse.py',193),
+  ('insert_body -> INTO NAME LPAREN fields RPAREN','insert_body',5,'p_insert_body','dbparse.py',199),
+  ('insert_body -> INTO NAME VALUES LPAREN fields RPAREN','insert_body',6,'p_insert_body','dbparse.py',200),
+  ('update -> UPDATE update_body','update',2,'p_update','dbparse.py',216),
+  ('delete -> DELETE FROM NAME','delete',3,'p_delete','dbparse.py',221),
+  ('update_body -> NAME SET expression','update_body',3,'p_update_body','dbparse.py',226),
+  ('expression -> field operator value','expression',3,'p_expression','dbparse.py',232),
+  ('expression -> expression COMMA field operator value','expression',5,'p_expression','dbparse.py',233),
+  ('fields -> NAME','fields',1,'p_fields','dbparse.py',252),
+  ('fields -> fields COMMA NAME','fields',3,'p_fields','dbparse.py',253),
+  ('field -> NAME','field',1,'p_field','dbparse.py',270),
+  ('value -> NAME','value',1,'p_value','dbparse.py',276),
+  ('operator -> EQUAL','operator',1,'p_operator','dbparse.py',281),
+  ('type -> int','type',1,'p_type','dbparse.py',286),
+  ('type -> str','type',1,'p_type','dbparse.py',287),
+  ('type -> bol','type',1,'p_type','dbparse.py',288),
 ]
