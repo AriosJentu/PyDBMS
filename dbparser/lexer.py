@@ -6,8 +6,8 @@ import re
 
 tokens = (
 
-	'CREATE', 'SHOW', 'SELECT', 'INSERT', 
-    'FROM', 'INTO', 'TABLE', 'WHERE',
+	'CREATE', 'SHOW', 'SELECT', 'INSERT', 'UPDATE', 'DELETE',
+    'FROM', 'INTO', 'TABLE', 'WHERE', 'SET',
     'NAME', 'VALUES', 
     'RPAREN', 'LPAREN', 'COMMA', 
     'int', 'str', 'bol',
@@ -23,11 +23,14 @@ t_CREATE = r'CREATE'
 t_SHOW = r'SHOW'
 t_SELECT = r'SELECT'
 t_INSERT = r'INSERT'
+t_UPDATE = r'UPDATE'
+p_DELETE = r'DELETE'
 
 t_TABLE = r'TABLE'
 t_FROM = r'FROM'
 t_INTO = r'INTO'
 t_WHERE = r'WHERE'
+t_SET = r'SET'
 
 t_VALUES = r'VALUES'
 
@@ -74,6 +77,11 @@ def t_NAME(t):
     elif (t.value.upper() == 'INSERT'):
         t.type = 'INSERT'
 
+    elif (t.value.upper() == 'UPDATE'):
+        t.type = 'UPDATE'
+
+    elif (t.value.upper() == 'DELETE'):
+        t.type = 'DELETE'
 
     elif (t.value.upper() == 'TABLE'):
         t.type = 'TABLE'
@@ -87,6 +95,8 @@ def t_NAME(t):
     elif(t.value.upper() == 'WHERE'):
         t.type = 'WHERE'
 
+    elif(t.value.upper() == 'SET'):
+        t.type = 'SET'
 
     elif (t.value.upper() == 'VALUES'):
         t.type = 'VALUES'
