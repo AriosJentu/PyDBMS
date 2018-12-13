@@ -204,6 +204,15 @@ class Type(Struct):
 
 	def __str__(self):
 		return self.name
+		
+
+	def __eq__(self, val):
+		if type(val) == str:
+			return self.name == val or self.fname == val or self.sqlname == val
+		elif type(val) == type:
+			return self.type == val
+		elif type(val) == Types:
+			return self == val.name
 
 
 Types = Struct({

@@ -1,10 +1,11 @@
 import pytest
-import binarydb
+import logic
+import classes
 import exceptions as exc
 
 
-database = binarydb.BinaryDataBase("testdbss.jpdb")
-unexistdatabase = binarydb.BinaryDataBase("testdbsssss.jpdb")
+database = logic.DataBase("testdbss.jpdb")
+unexistdatabase = logic.DataBase("testdbsssss.jpdb")
 database.create(recreate=True)
 
 
@@ -160,8 +161,46 @@ def test_update_cow():
 	assert len(bsel) == len(asel)
 
 
+def test_exec_select():
+
+	select1 = database.exec("SELECT Kek FROM Hello")
+	select2 = database.select_from("Hello", "Kek")
+	assert len(select1) == len(select2)
+
+
+def test_exec_create():
+
+	table = database.exec(
+		"CREATE TABLE HelloWorld ('Test1' int, 'Test2' string, 'Test3' bool)"
+	)
+
+	for i in range(3):
+		assert database.HelloWorld.fields[i] == "Test"+str(i+1)
+		assert database.HelloWorld.types[i] == [int, str, bool][i]
+		assert database.HelloWorld.types[i] != [bool, int, str][i] 
+
+	for i in range(10):
+		database.HelloWorld.insert([i+1479, "Kek", True if i%2 == 1 else False])
+	
+
+def test_exec_show_create():
+
+	res1 = database.exec("SHOW CREATE TABLE HelloWorld")
+	res2 = database.HelloWorld.show_create()
+	assert res1 == res2
+
+
+def test_exec_delete():
+
+	sel1 = database.exec("SELECT Test1 FROM HelloWorld")
+	database.exec("DELETE FROM HelloWorld WHERE Test1 == 1487")
+	database.HelloWorld.commit()
+	
+	sel2 = database.exec("SELECT Test1 FROM HelloWorld")
+	assert len(sel1) == len(sel2)+1
+
+
 def test_clear_table():
 
 	database.Hello.delete_insecure()
 	assert len(database.Hello.select("*")) == 0
-

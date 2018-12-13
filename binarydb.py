@@ -178,7 +178,6 @@ class BinaryDataBase(classes.Struct):
 			meta.file = self._FILE
 			meta._write_to_file()	
 
-
 		self.create_table("__test__", {
 			"Test1": int, 
 			"Test2": str, 
