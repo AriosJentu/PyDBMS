@@ -1,7 +1,6 @@
 import binarydb
 import dbparser.dbparse as parser
 
-
 class DataBase(binarydb.BinaryDataBase):
 
 	def exec(self, string):
@@ -35,7 +34,6 @@ class DataBase(binarydb.BinaryDataBase):
 
 		elif result[0].type == 'update':
 
-
 			return self.update_set(
 				result[0].name,
 				result[0].values,
@@ -45,4 +43,4 @@ class DataBase(binarydb.BinaryDataBase):
 
 		elif result[0].type == 'delete':
 			
-			return self.delete_from(result[0].name, reuslt[1])
+			return self.delete_from(result[0].name, result[1])
