@@ -204,3 +204,5 @@ def test_clear_table():
 
 	database.Hello.delete_insecure()
 	assert len(database.Hello.select("*")) == 0
+
+#Empty

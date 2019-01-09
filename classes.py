@@ -95,11 +95,11 @@ class Struct:
 
 
 	def keys(self):
-		return list(self.__dict__.keys())
+		return self.__dict__.keys()
 
 
 	def values(self):
-		return list(self.__dict__.values())
+		return self.__dict__.values()
 
 
 	def items(self):
@@ -1072,11 +1072,11 @@ class Row(Struct):
 		iden = "\nRow ID:\t\t\t{}".format(self.id)		
 		aval = "\nRow Status:\t\t{}".format(
 			{
-				self.available == 0: "Not Available",
-				self.available == 1: "Available",
-				self.available == 2: "Marked as Removed",
-				self.available == 3: "Marked as updated"
-			}[True]
+				0: "Not Available",
+				1: "Available",
+				2: "Marked as Removed",
+				3: "Marked as updated"
+			}[self.available]
 		)		
 		prev = "\nPrevious Row at:\t{}".format(self.previous)		
 		nxtr = "\nNext Row at:\t\t{}".format(self.next)		
@@ -1100,11 +1100,8 @@ class Row(Struct):
 		svals = self.values
 		rvals = row.values
 		
-		svals["next"] = 0
-		rvals["next"] = 0
-
 		for i in svals.keys():
-			if i in rvals.keys():
+			if i in rvals.keys() and i != "next":
 				if svals[i] != rvals[i]:
 					return False
 
