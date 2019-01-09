@@ -3,4 +3,4 @@ language: python
 python:
   - "3.6"
 
-script: python TEST_files.py
+script: py.test -s TEST_files.py
