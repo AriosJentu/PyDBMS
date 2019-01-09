@@ -3,4 +3,7 @@ language: python
 python:
   - "3.6"
 
+install:
+  - pip install ply
+
 script: py.test -s TEST_files.py
