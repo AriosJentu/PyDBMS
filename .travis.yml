@@ -2,6 +2,5 @@ language: python
 
 python:
   - "3.6"
-  - "3.7"
 
 script: python TEST_files.py
