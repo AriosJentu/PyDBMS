@@ -306,7 +306,7 @@ def test_dohuya_inserts():
 
 	def func():
 		for i in range(10):
-			database.Kekosik.insert([1488, 228], )
+			database.Kekosik.insert([1488, 228])
 
 	thread1 = threading.Thread(target=func)
 	thread2 = threading.Thread(target=func)
