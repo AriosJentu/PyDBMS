@@ -10,7 +10,7 @@ unexistdatabase = logic.DataBase("testdbsssss.jpdb")
 database.create(recreate=True)
 
 
-def test_connect_error():
+def test_connect_error():	#1
 	with pytest.raises(exc.DBConnectionException):
 		database.connect()
 
@@ -18,20 +18,20 @@ def test_connect_error():
 		unexistdatabase.connect()
 
 
-def test_create_table_error():
+def test_create_table_error():	#2
 	database.create_table("Hello", {"Kek": int, "Lol": str})
 	with pytest.raises(exc.DBTableException):
 		database.create_table("Hello", {"Kek": int})
 
 
-def test_insert():
+def test_insert():	#3
 	for i in range(10):
 		database["Hello"].insert([i], ["Kek"]) 
 		database.Hello.insert([i+10], ["Kek"]) 
 		database.insert_into("Hello", [i+20], ["Kek"]) 
 		
 
-def test_select():
+def test_select():	#4
 
 	select1 = database.Hello.select("*")
 	assert len(select1) == 30
@@ -48,7 +48,7 @@ def test_select():
 	assert len(select1.fields) > len(select2.fields)
 
 
-def test_delete():
+def test_delete():	#5
 
 	database.Hello.delete_insecure("id >= 10")
 
@@ -56,7 +56,7 @@ def test_delete():
 	assert len(select) == 10
 
 
-def test_secure_delete():
+def test_secure_delete():	#6
 
 	bfsel = database.Hello.select("*")
 	database.Hello.delete("id >= 3 and id <= 5")
@@ -70,13 +70,13 @@ def test_secure_delete():
 	assert len(bsel) == len(asel)+3
 
 
-def test_insert_error():
+def test_insert_error():	#7
 	with pytest.raises(exc.DBValueException):
 		database.Hello.insert(["12"], ["Kek"]) 
 		database.Hello.insert(["KEKOS"], ["Faaka"]) 
 
 
-def test_insert_elements():
+def test_insert_elements():	#8
 
 	elements = []
 	cnt = len(database.Hello.select("*"))
@@ -91,7 +91,7 @@ def test_insert_elements():
 		assert sel[i] == elements[i]
 
 
-def test_remove_elements():
+def test_remove_elements():	#9
 
 	sel = database.Hello.select("*", "id < 3 or id > 25")
 	
@@ -102,7 +102,7 @@ def test_remove_elements():
 		assert sel[i] == sels[i]
 
 
-def test_push_to_removed():
+def test_push_to_removed():	#10
 
 	sel = database.Hello.select("*", removed=True)
 	cnt = min(5, len(sel))
@@ -113,7 +113,7 @@ def test_push_to_removed():
 	assert len(sels) == len(sel)-cnt
 
 
-def test_copy_elements():
+def test_copy_elements():	#11
 	
 	sel = database.Hello.select("*")
 	n = 10
@@ -125,7 +125,7 @@ def test_copy_elements():
 	assert len(sel2) == len(sel)+n
 
 
-def test_update():
+def test_update():	#12
 
 	database.Hello.insert([1488, "SASKA"])
 	bsel = database.Hello.select("*", "id == 31 or id == 34")
@@ -139,7 +139,7 @@ def test_update():
 	assert updt[1] == asel[1] 
 
 
-def test_delete_row():
+def test_delete_row():	#13
 	
 	bsel = database.Hello.select("*")
 	database.Hello.delete_row(bsel[14])
@@ -148,8 +148,8 @@ def test_delete_row():
 	assert len(bsel) == len(asel)+1
 
 
-def test_update_cow():
-
+def test_update_cow():	#14
+	
 	bsel = database.Hello.select("*")
 	updt = database.Hello.update([1488228, "USETHEFORCELUKE"], "*", "id == 32 or id == 33")
 	asel = database.Hello.select("*", upd_inc=True)
@@ -162,14 +162,14 @@ def test_update_cow():
 	assert len(bsel) == len(asel)
 
 
-def test_exec_select():
+def test_exec_select():	#15
 
 	select1 = database.exec("SELECT Kek FROM Hello")
 	select2 = database.select_from("Hello", "Kek")
 	assert len(select1) == len(select2)
 
 
-def test_exec_create():
+def test_exec_create():	#16
 
 	table = database.exec(
 		"CREATE TABLE HelloWorld ('Test1' int, 'Test2' string, 'Test3' bool)"
@@ -184,14 +184,14 @@ def test_exec_create():
 		database.HelloWorld.insert([i+1479, "Kek", True if i%2 == 1 else False])
 	
 
-def test_exec_show_create():
+def test_exec_show_create():	#17
 
 	res1 = database.exec("SHOW CREATE TABLE HelloWorld")
 	res2 = database.HelloWorld.show_create()
 	assert res1 == res2
 
 
-def test_exec_delete():
+def test_exec_delete():	#18
 
 	sel1 = database.exec("SELECT Test1 FROM HelloWorld")
 	database.exec("DELETE FROM HelloWorld WHERE Test1 == 1487")
@@ -201,7 +201,7 @@ def test_exec_delete():
 	assert len(sel1) == len(sel2)+1
 
 
-def test_select_update_parallel():
+def test_select_update_parallel():	#19
 
 	select_main = database.Hello.select("*", "id == 2")
 
@@ -236,7 +236,7 @@ def test_select_update_parallel():
 	assert s3[0] != select_main[0]
 
 
-def test_update_parallel():
+def test_update_parallel():	#20
 
 	def func1():
 		database.Hello.update([2281488, "SOSIPISOS"], "*", "id == 2")
@@ -258,7 +258,7 @@ def test_update_parallel():
 	assert len(s) == 1
 
 
-def test_update_parallel_10_times():
+def test_update_parallel_10_times():	#21
 
 	def funcn(n):
 		def func():
@@ -279,7 +279,7 @@ def test_update_parallel_10_times():
 	assert s[0].values.Kek == 2281480+9
 
 
-def test_update_parallel_200_times():
+def test_update_parallel_200_times():	#22
 
 	def funcn(n):
 		def func():
@@ -300,16 +300,26 @@ def test_update_parallel_200_times():
 	assert s[0].values.Kek == 2281480+199
 
 
-def test_dohuya_inserts():
+def test_clear_table():	#24
+
+	database.Hello.delete_insecure()
+	assert len(database.Hello.select("*")) == 0
+
+
+def test_dohuya_inserts():	#23
 	
 	database.create_table("Kekosik", {"C1": int, "C2": int})
 
-	def func():
+	def func1():
 		for i in range(10):
 			database.Kekosik.insert([1488, 228])
 
-	thread1 = threading.Thread(target=func)
-	thread2 = threading.Thread(target=func)
+	def func2():
+		for i in range(10):
+			database.Kekosik.insert([1489, 228])
+
+	thread1 = threading.Thread(target=func1)
+	thread2 = threading.Thread(target=func2)
 
 	thread1.start()
 	thread2.start()
@@ -317,8 +327,5 @@ def test_dohuya_inserts():
 	thread1.join()
 	thread2.join()
 
-
-def test_clear_table():
-
-	database.Hello.delete_insecure()
-	assert len(database.Hello.select("*")) == 0
+	database.Kekosik.delete_insecure()
+	assert len(database.Kekosik.select("*")) == len(database.Hello.select("*"))

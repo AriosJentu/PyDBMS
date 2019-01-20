@@ -2,7 +2,7 @@ import consts
 import exceptions as exc
 import threading
 
-lock = threading.Lock()
+lock = threading.RLock()
 
 def where(expr, variables={}):
 	return bool(
@@ -599,6 +599,7 @@ class TableMeta(Struct):
 			nextrow.previous = pos
 			nextrow._write_indexes()
 
+		lock.acquire()
 		row = Row(pos)
 		row.tblmeta = self
 		row.id = self.count
@@ -607,12 +608,14 @@ class TableMeta(Struct):
 		row.previous = after_index
 		row.values = Struct({v:values[i] for i, v in enumerate(fields)})
 		row._write_to_file()
+		lock.release()
 
 		if after_index == self.lastelmnt:
 			self.lastelmnt = pos
 			self._update_pages()
 
 		self.count += 1
+
 		return row, pos
 
 
@@ -668,7 +671,8 @@ class TableMeta(Struct):
 
 
 	def insert(self, values=[], fields=[]):
-		return self._insert_after(values, fields)[0]
+		val, _ = self._insert_after(values, fields)
+		return val
 
 
 	def insert_after(self, row, values=[], fields=[]):
@@ -716,7 +720,7 @@ class TableMeta(Struct):
 
 		lock.acquire()
 		updated = []
-		
+
 		for i in self.get_rows():
 
 			if where(expr, i.values):
