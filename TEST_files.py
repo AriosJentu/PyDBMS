@@ -2,7 +2,8 @@ import pytest
 import logic
 import classes
 import exceptions as exc
-
+import threading
+import time
 
 database = logic.DataBase("testdbss.jpdb")
 unexistdatabase = logic.DataBase("testdbsssss.jpdb")
@@ -200,9 +201,124 @@ def test_exec_delete():
 	assert len(sel1) == len(sel2)+1
 
 
+def test_select_update_parallel():
+
+	select_main = database.Hello.select("*", "id == 2")
+
+	def func1():
+		s1 = database.Hello.select("*", "id == 2")
+		assert s1[0] == select_main[0]
+
+	def func2():
+
+		#BEFORE
+		s2 = database.Hello.select("*", "id == 2")
+		assert s2[0] == select_main[0]
+
+		database.Hello.update([2281488, "SOSIPISOS"], "*", "id == 2")
+		database.Hello.commit()
+
+		#AFTER
+		s2 = database.Hello.select("*", "id == 2")
+		assert s2[0] != select_main[0]
+
+
+	thread1 = threading.Thread(target=func1)
+	thread2 = threading.Thread(target=func2)
+
+	thread1.start()
+	thread2.start()
+
+	thread1.join()
+	thread2.join()
+
+	s3 = database.Hello.select("*", "id == 2")
+	assert s3[0] != select_main[0]
+
+
+def test_update_parallel():
+
+	def func1():
+		database.Hello.update([2281488, "SOSIPISOS"], "*", "id == 2")
+
+	def func2():
+		database.Hello.update([2281489, "SOSIPISOS"], "*", "id == 2")
+
+
+	thread1 = threading.Thread(target=func1)
+	thread2 = threading.Thread(target=func2)
+
+	thread1.start()
+	thread2.start()
+
+	thread1.join()
+	thread2.join()
+
+	s = database.Hello.select("*", "id == 2")
+	assert len(s) == 1
+
+
+def test_update_parallel_10_times():
+
+	def funcn(n):
+		def func():
+			database.Hello.update([2281480+n, "SOSIPISOS"], "*", "id == 2")
+		return func
+
+	threads = []
+	for i in range(10):
+		func = funcn(i)
+		threads.append(threading.Thread(target=func))
+		threads[-1].start()
+
+	for thread in threads:
+		thread.join()
+
+	s = database.Hello.select("*", "id == 2")
+	assert len(s) == 1
+	assert s[0].values.Kek == 2281480+9
+
+
+def test_update_parallel_200_times():
+
+	def funcn(n):
+		def func():
+			database.Hello.update([2281480+n, "SOSIPISOS"], "*", "id == 2")
+		return func
+
+	threads = []
+	for i in range(200):
+		func = funcn(i)
+		threads.append(threading.Thread(target=func))
+		threads[-1].start()
+
+	for thread in threads:
+		thread.join()
+
+	s = database.Hello.select("*", "id == 2")
+	assert len(s) == 1
+	assert s[0].values.Kek == 2281480+199
+
+
+def test_dohuya_inserts():
+	
+	database.create_table("Kekosik", {"C1": int, "C2": int})
+
+	def func():
+		for i in range(10):
+			database.Kekosik.insert([1488, 228], )
+
+	thread1 = threading.Thread(target=func)
+	thread2 = threading.Thread(target=func)
+
+	thread1.start()
+	thread2.start()
+
+	thread1.join()
+	thread2.join()
+
+
 def test_clear_table():
 
 	database.Hello.delete_insecure()
 	assert len(database.Hello.select("*")) == 0
-
-#Empty

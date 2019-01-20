@@ -1,5 +1,8 @@
 import consts
 import exceptions as exc
+import threading
+
+lock = threading.Lock()
 
 def where(expr, variables={}):
 	return bool(
@@ -707,21 +710,27 @@ class TableMeta(Struct):
 
 	def update(self, values=[], fields=[], expr="1"):
 
+
 		fields = self._get_valid_fields(fields)
 		self._check_values_for_fields(fields, values)
 
+		lock.acquire()
 		updated = []
+		
 		for i in self.get_rows():
 
 			if where(expr, i.values):
 
 				i._select_by_fields(fields)
+				
 				row = self._update_copy_row(i.index, values, fields)
 				
 				update = Method(self.delete_row, i)
 				self._TO_COMMIT.append(update)
 				updated.append(row)
 
+
+		lock.release()
 		return updated
 
 
